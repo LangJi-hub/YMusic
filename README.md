@@ -48,8 +48,9 @@ YMusic 是一个**完全自托管**的音乐服务。它把你常用的几个音
 
 ## 界面预览
 
-> Android 客户端真机截图（1260×2720，3× 像素密度），非设计稿。
-> 网页端、Electron 桌面端与 Android 端共用同一份 `web/index.html`，界面一致，差别仅在窗口外壳。
+### 移动端（Android）
+
+> 真机截图，1260×2720，3× 像素密度，非设计稿。
 
 <table>
   <tr>
@@ -72,9 +73,36 @@ YMusic 是一个**完全自托管**的音乐服务。它把你常用的几个音
   </tr>
 </table>
 
+### 桌面端（Electron）
+
+> Windows 客户端截图，1920×1260。桌面端在移动端功能之上额外做了三件事：
+> **独立桌面歌词窗**（可脱离主窗口自由摆放、始终置顶）、**多列表格视图**（标题 / 专辑 / 来源 / 时长四列对齐，便于批量浏览与下载）、**本地文件管理**（落盘路径可查、一键打开所在文件夹）。
+
+<table>
+  <tr>
+    <td align="center"><img src="docs/screenshots/desktop-home.jpg" width="400"><br><sub><b>首页</b> · 左侧固定导航 · 每日推荐横排</sub></td>
+    <td align="center"><img src="docs/screenshots/desktop-lyric.jpg" width="400"><br><sub><b>桌面歌词窗</b> · 独立置顶，可与主窗口分离</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/screenshots/desktop-search.jpg" width="400"><br><sub><b>搜索</b> · 四列表格 · 同名折叠可展开</sub></td>
+    <td align="center"><img src="docs/screenshots/desktop-rank.jpg" width="400"><br><sub><b>排行榜</b> · 双列卡片，一屏看全榜单</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/screenshots/desktop-artist.jpg" width="400"><br><sub><b>歌手</b> · 宽屏九宫格，一屏更多人</sub></td>
+    <td align="center"><img src="docs/screenshots/desktop-playlist.jpg" width="400"><br><sub><b>歌单</b> · 六列封面 · 播放量角标</sub></td>
+  </tr>
+  <tr>
+    <td align="center" colspan="2"><img src="docs/screenshots/desktop-downloads.jpg" width="400"><br><sub><b>本地与下载</b> · 落盘路径可查 · 打开所在文件夹</sub></td>
+  </tr>
+</table>
+
+> 网页端、桌面端与 Android 端共用同一份 `web/index.html`，逻辑完全一致；桌面端与安卓端只是在外面各套了一层外壳（Electron / WebView），并按宽窄屏做了不同的列表与网格排布。
+
 ## 目录
 
 - [界面预览](#界面预览)
+  - [移动端（Android）](#移动端android)
+  - [桌面端（Electron）](#桌面端electron)
 - [功能特性](#功能特性)
 - [技术架构](#技术架构)
 - [快速开始](#快速开始)
