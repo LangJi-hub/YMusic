@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-label="YMusic">
+  <title>YMusic</title>
+  <desc>唱片音符：符头是一张带中心孔的黑胶唱片，符干向上收成一道流动声波，左侧两道同心弧是扩散的声场。</desc>
+  <defs>
+    <linearGradient id="ymBg" gradientUnits="userSpaceOnUse" x1="10" y1="6" x2="248" y2="250">
+      <stop offset="0" stop-color="#05301F"/>
+      <stop offset="0.44" stop-color="#12A05E"/>
+      <stop offset="0.76" stop-color="#24C97C"/>
+      <stop offset="1" stop-color="#6EE7C4"/>
+    </linearGradient>
+    <radialGradient id="ymHi" gradientUnits="userSpaceOnUse" cx="76" cy="46" r="190">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.24"/>
+      <stop offset="0.56" stop-color="#FFFFFF" stop-opacity="0.04"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="ymGl" gradientUnits="userSpaceOnUse" x1="42" y1="44" x2="208" y2="208">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#D3FBE8"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="256" height="256" rx="58" fill="url(#ymBg)"/>
+  <rect width="256" height="256" rx="58" fill="url(#ymHi)"/>
+
+  <g transform="translate(20.602 0.495) scale(0.94624)">
+  <g fill="none" stroke="url(#ymGl)" stroke-linecap="round" opacity="0.42">
+    <path d="M51.50 198.00 A56 56 0 0 1 67.08 124.70" stroke-width="8"/>
+    <path d="M37.00 212.50 A76 76 0 0 1 58.60 106.30" stroke-width="7" opacity="0.72"/>
+  </g>
+  <path fill-rule="evenodd" fill="url(#ymGl)"
+    d="M100 135 a35 35 0 1 0 0 70 a35 35 0 1 0 0 -70 Z
+       M100 161 a9 9 0 1 0 0 18 a9 9 0 1 0 0 -18 Z"/>
+  <path d="M136 166 L144 66" fill="none" stroke="url(#ymGl)" stroke-width="25" stroke-linecap="round"/>
+  <path d="M144 68 C 176 70 194 92 196 124" fill="none" stroke="url(#ymGl)" stroke-width="21" stroke-linecap="round"/>
+  </g>
+</svg>

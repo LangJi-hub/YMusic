@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>YMusic 服务地址</title>
+<style>
+  :root{--bg:#070b09;--card:#0f1712;--line:#1e2b23;--txt:#e8f2ea;--sub:#8fa396;--acc:#25d07a;--warn:#f0b429}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;background:var(--bg);color:var(--txt);
+       font:15px/1.7 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+       display:flex;align-items:flex-start;justify-content:center;padding:20px}
+  .c{max-width:560px;width:100%;background:var(--card);border:1px solid var(--line);
+     border-radius:18px;padding:26px;box-shadow:0 18px 50px rgba(0,0,0,.5);margin:auto}
+  h1{margin:0 0 6px;font-size:20px;display:flex;align-items:center;gap:10px}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--acc);box-shadow:0 0 10px var(--acc);flex:0 0 auto}
+  p.sub{margin:0 0 16px;color:var(--sub);font-size:13px}
+  code{display:block;background:#0a100c;border:1px solid var(--line);
+       border-radius:10px;padding:13px;font-size:13px;color:#9fd8b6;word-break:break-all}
+  .row{display:flex;gap:10px;align-items:stretch;flex-wrap:wrap;margin-top:14px}
+  a.btn,.btn{flex:1;min-width:150px;display:block;text-align:center;text-decoration:none;
+       background:var(--acc);color:#04120a;font-weight:700;border-radius:12px;padding:13px 16px;
+       border:0;font-size:15px;font-family:inherit;cursor:pointer}
+  .btn.ghost{background:transparent;color:var(--txt);border:1px solid var(--line)}
+  .stamp{margin-top:12px;font-size:12px;color:var(--sub)}
+  .stamp.stale{color:var(--warn)}
+  .how{margin-top:22px;border-top:1px solid var(--line);padding-top:18px}
+  .how h2{margin:0 0 10px;font-size:15px;color:var(--txt)}
+  .how ol{margin:0;padding-left:20px;color:var(--sub);font-size:13.5px}
+  .how li{margin-bottom:7px}
+  .how b{color:var(--txt);font-weight:600}
+  .tip{margin-top:16px;font-size:12px;color:var(--sub);background:#0a100c;
+       border:1px solid var(--line);border-radius:10px;padding:12px}
+</style>
+</head>
+<body>
+<div class="c">
+  <h1><span class="dot"></span>YMusic 音乐服务</h1>
+  <p class="sub">当前服务器地址如下。老版本 App 打不开时，把下面这串地址填进 App 就能恢复。</p>
+
+  <code id="u">读取中…</code>
+
+  <div class="row">
+    <button class="btn" id="copy" type="button">复制地址</button>
+    <a class="btn ghost" id="go" href="#">用浏览器打开</a>
+  </div>
+
+  <div class="stamp" id="stamp">读取中…</div>
+
+  <div class="how">
+    <h2>怎么填进 App？</h2>
+    <ol>
+      <li>打开 <b>YMusic</b>（或 <b>YMusic 管理台</b>）</li>
+      <li>如果停在地址设置页：直接粘贴，点「连 接」</li>
+      <li>如果已经进了 App：按手机<b>返回键</b>两下，在弹出菜单里选
+          <b>「更换服务器地址」</b>，粘贴后确认</li>
+      <li>管理台用户同理，地址填好后会加载 <b>/admin</b> 控制台页面</li>
+    </ol>
+  </div>
+
+  <div class="tip">
+    这个页面本身的地址（ymusic-boot.app.workbuddy.host）<b>是固定不变的</b>，
+    它只负责回答一句话：「服务器现在在哪」。
+    服务端的真实地址<b>必然是会变的</b> —— 免费临时隧道每次重启都换域名，
+    将来换成云服务器、重装或迁移，IP 也会变。所以服务端每次重启后，
+    这里的内容都要跟着更新一次。<br><br>
+    如果下面显示的「地址更新于」已经是很久以前，多半是<b>服务端那台电脑没开机
+    或者服务挂了</b> —— 这种情况下改 App 里的地址也没用，得先把服务端跑起来。
+  </div>
+</div>
+<script>
+/* 兜底地址：addr.json 拉不到时用它，所以每次服务端换地址这里也要跟着改。
+   由 sync_addr.py 自动同步，不用手改。 */
+var ADDR = "http://127.0.0.1:8788";
+
+function ago(iso){
+  var d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  var mins = Math.floor((Date.now() - d.getTime()) / 60000);
+  if (mins < 1) return "刚刚";
+  if (mins < 60) return mins + " 分钟前";
+  if (mins < 1440) return Math.floor(mins / 60) + " 小时前";
+  return Math.floor(mins / 1440) + " 天前";
+}
+
+function render(u, updated){
+  document.getElementById("u").textContent = u;
+  document.getElementById("go").href = u;
+
+  var st = document.getElementById("stamp");
+  if (!updated) { st.textContent = ""; return; }
+  var mins = Math.floor((Date.now() - new Date(updated).getTime()) / 60000);
+  st.textContent = "地址更新于 " + ago(updated) + "（" + updated + "）";
+  /* 超过 6 小时没刷新，八成是服务端没在跑 —— 明说出来，别让人白折腾 */
+  if (mins > 360) {
+    st.className = "stamp stale";
+    st.textContent += " ⚠ 可能已失效，服务端或许没开机";
+  }
+}
+
+fetch("addr.json?t=" + Date.now(), { cache: "no-store" })
+  .then(function(r){ return r.ok ? r.json() : null; })
+  .then(function(j){ render((j && j.url) || ADDR, j && j.updated); })
+  .catch(function(){ render(ADDR, null); });
+
+/* 不再自动跳转：这个页面现在是「人工救援通道」，
+   得让人看清地址、能复制。想进服务就点上面的按钮。 */
+document.getElementById("copy").onclick = function(){
+  var t = document.getElementById("u").textContent;
+  var self = this;
+  function done(){
+    self.textContent = "已复制 ✓";
+    setTimeout(function(){ self.textContent = "复制地址"; }, 1600);
+  }
+  function fallback(){
+    var ta = document.createElement("textarea");
+    ta.value = t;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    try {
+      document.execCommand("copy");
+      done();
+    } catch (_) {
+      self.textContent = "请长按上方地址手动复制";
+    }
+    document.body.removeChild(ta);
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(t).then(done, fallback);
+  } else {
+    fallback();
+  }
+};
+</script>
+</body>
+</html>

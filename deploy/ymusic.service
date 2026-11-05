@@ -1,0 +1,40 @@
+[Unit]
+Description=YMusic 音乐服务（用户端）
+Documentation=https://github.com/
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ymusic
+Group=ymusic
+WorkingDirectory=/opt/ymusic
+
+Environment=PORT=8788
+# 必须显式设为 0.0.0.0：server.mjs 里 BIND_HOST = process.env.HOST || '127.0.0.1'，
+# 默认只监听本机回环。不改这一行，安全组即使放行了 8788，外网也连不上。
+# 默认值保持 127.0.0.1 是有意的设计（本机开发更安全），云端靠这一行显式打开。
+Environment=HOST=0.0.0.0
+Environment=NODE_ENV=production
+Environment=YM_APP_DIR=/opt/ymusic
+
+# server.mjs 是零第三方依赖的纯 Node 内置模块实现，不需要 npm install
+ExecStart=/usr/bin/node /opt/ymusic/server.mjs
+
+Restart=always
+RestartSec=3
+KillSignal=SIGTERM
+TimeoutStopSec=15
+
+StandardOutput=append:/var/log/ymusic/server.log
+StandardError=append:/var/log/ymusic/server.log
+
+# 最小权限：禁止提权、只读 /usr /boot、私有 /tmp
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+ReadWritePaths=/opt/ymusic /var/log/ymusic
+
+[Install]
+WantedBy=multi-user.target

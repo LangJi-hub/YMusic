@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>安装 YMusic · 音乐下载器</title>
+<link rel="icon" href="/icons/favicon-64.png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<meta name="theme-color" content="#0A120D">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="YMusic">
+<style>
+  :root{--bg:#050806;--card:#0f1712;--line:#1e2b23;--txt:#e8f2ea;--sub:#8fa396;--acc:#25d07a}
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{min-height:100vh;background:var(--bg);color:var(--txt);
+       font:15px/1.7 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+       padding:min(6vw,32px);display:flex;justify-content:center}
+  .wrap{width:100%;max-width:520px}
+  header{text-align:center;padding:14px 0 22px}
+  .logo{width:64px;height:64px;border-radius:16px;display:block;margin:0 auto 12px}
+  h1{margin:0;font-size:21px;letter-spacing:.5px}
+  .sub{margin:6px 0 0;color:var(--sub);font-size:13px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;margin-bottom:14px}
+  .card h2{margin:0 0 6px;font-size:16px}
+  .card p{margin:0 0 14px;color:var(--sub);font-size:13px}
+  a.btn{display:block;text-align:center;text-decoration:none;background:var(--acc);color:#04120a;
+        font-weight:700;border-radius:12px;padding:14px 16px;font-size:15px}
+  a.btn.ghost{background:transparent;color:var(--txt);border:1px solid var(--line);margin-top:10px;font-weight:500}
+  ol{margin:0;padding-left:20px;color:var(--txt);font-size:14px}
+  ol li{margin-bottom:9px}
+  ol li b{color:var(--acc)}
+  .kv{display:flex;justify-content:space-between;font-size:12px;color:var(--sub);
+      border-top:1px solid var(--line);padding-top:12px;margin-top:4px}
+  .hide{display:none}
+  .tag{display:inline-block;font-size:11px;color:var(--acc);background:#122019;
+       border:1px solid #1d3a2a;padding:2px 8px;border-radius:20px;margin-left:6px}
+  footer{text-align:center;color:#5d7267;font-size:12px;padding:10px 0 26px;line-height:1.9}
+  code{background:#0a100c;border:1px solid var(--line);border-radius:6px;padding:1px 6px;font-size:12px;color:#9fd8b6}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <img class="logo" src="/icons/icon-192.png" alt="YMusic">
+    <h1>YMusic 音乐下载器</h1>
+    <p class="sub">手机装成 App 图标 · 电脑装成桌面程序 · 一个账号两端通用</p>
+  </header>
+
+  <!-- 安卓 -->
+  <div class="card hide" id="c-android">
+    <h2>安卓手机<span class="tag" id="apkVer">检查中</span></h2>
+    <p>装好后桌面上会出现图标，点开就能用。以后加功能会在 App 里提示，点一下就更新。</p>
+    <a class="btn" href="/api/app/apk">下载安卓客户端</a>
+    <a class="btn ghost" href="/">先用网页版</a>
+    <div class="kv"><span>安装提示</span><span>选择「允许安装未知应用」即可</span></div>
+  </div>
+
+  <!-- 苹果 -->
+  <div class="card hide" id="c-ios">
+    <h2>苹果 iPhone / iPad</h2>
+    <p>苹果不允许直接装安装包，用 Safari 添加到主屏幕，效果和 App 一模一样。</p>
+    <ol>
+      <li>用 <b>Safari</b> 打开本页（微信里打开请先点右上角「在 Safari 中打开」）</li>
+      <li>点底部中间的 <b>分享按钮</b>（方框带向上箭头）</li>
+      <li>向下找到 <b>「添加到主屏幕」</b> → 点右上角 <b>「添加」</b></li>
+      <li>回到桌面，点新出现的 <b>YMusic 图标</b> 即可全屏使用</li>
+    </ol>
+    <a class="btn ghost" href="/">打开 YMusic</a>
+  </div>
+
+  <!-- 电脑 -->
+  <div class="card hide" id="c-pc">
+    <h2>Windows 电脑</h2>
+    <p>下载后双击即用，不用安装、不写注册表，删掉文件夹就卸载干净。</p>
+    <a class="btn" href="/api/app/exe">下载电脑版（Windows）</a>
+    <a class="btn ghost" href="/">先用网页版</a>
+    <div class="kv"><span>版本</span><span id="exeVer">—</span></div>
+    <div class="kv"><span>大小</span><span id="exeSize">—</span></div>
+  </div>
+
+  <div class="card">
+    <h2>账号是通用的</h2>
+    <p style="margin:0">不管在手机还是电脑上注册，用<b>手机号</b>或<b>邮箱</b>都能登录，
+       收藏和播放记录跟着账号走，换设备也在。</p>
+  </div>
+
+  <footer>
+    当前服务器 <code id="host">—</code><br>
+    装好后如果打不开，多半是服务器没开，联系管理员即可
+  </footer>
+</div>
+
+<script>
+(function(){
+  var ua = navigator.userAgent;
+  var isAndroid = /Android/i.test(ua);
+  var isIOS = /iPad|iPhone|iPod/.test(ua) ||
+              (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  var standalone = window.navigator.standalone ||
+                   window.matchMedia('(display-mode: standalone)').matches;
+
+  document.getElementById('host').textContent = location.origin;
+
+  if (isIOS) {
+    document.getElementById('c-ios').classList.remove('hide');
+    if (standalone) {
+      document.querySelector('#c-ios h2').insertAdjacentHTML('afterend',
+        '<p style="color:var(--acc);font-size:12px;margin:0 0 10px">✓ 你已经装好了，直接打开就行</p>');
+    }
+  } else if (isAndroid) {
+    document.getElementById('c-android').classList.remove('hide');
+  } else {
+    document.getElementById('c-pc').classList.remove('hide');
+  }
+
+  // 把真实的版本号显示出来，避免用户下到旧包
+  fetch('/api/app/version?t=' + Date.now(), {cache:'no-store'})
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(j){
+      if (!j) return;
+      if (j.apk && j.apk.versionName) {
+        document.getElementById('apkVer').textContent = 'v' + j.apk.versionName;
+      }
+      /* 电脑版：把真实版本号和体积显示出来。
+         以前这里只写死「约 83 MB」，而实际包早就到 180MB 量级了 ——
+         老用户看到过时的数字，会以为下载页没更新、拿到的是旧包。
+         exe 段在服务端文件还没上传时是 null（readExeMeta 读不到就返回 null），
+         所以下面每一处都要判空，不能假设它一定在。 */
+      if (j.exe && j.exe.version) {
+        document.getElementById('exeVer').textContent = 'v' + j.exe.version;
+        if (j.exe.size) {
+          document.getElementById('exeSize').textContent =
+            (j.exe.size / 1048576).toFixed(0) + ' MB';
+        }
+      }
+    })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>

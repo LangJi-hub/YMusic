@@ -1,0 +1,1977 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>YMusic 管理台</title>
+<meta name="theme-color" content="#070C09">
+<link rel="icon" href="logo-mark.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<style>
+:root{
+  --bg0:#070C09; --bg1:#0C1310; --bg2:#111A15; --bg3:#16221B; --bg4:#1B2A21;
+  --line:#1C2A22; --line2:#26382D;
+  --g300:#6EE7C4; --g400:#4ADE80; --g500:#24C97C; --g600:#12A05E; --g700:#0B6B41;
+  --t0:#E8F5EC; --t1:#9BB3A5; --t2:#6B8578; --t3:#43584C;
+  --danger:#F87171; --danger-bg:#3A1A1A; --warn:#F0B429; --warn-bg:#3A2E10; --info:#60A5FA;
+  --r-s:8px; --r-m:12px; --r-l:16px; --r-xl:22px; --pill:999px;
+  --side:236px; --top:60px;
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI Variable Display","Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --mono:ui-monospace,"SF Mono",Consolas,"Cascadia Mono",monospace;
+  --sh:0 8px 28px rgba(0,0,0,.45);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%}
+body{background:var(--bg0);color:var(--t0);font:14px/1.55 var(--font);overflow:hidden;
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none}
+a{color:var(--g400);text-decoration:none}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:#22332a;border-radius:99px;border:3px solid var(--bg0)}
+::-webkit-scrollbar-thumb:hover{background:#2e463a}
+::-webkit-scrollbar-track{background:transparent}
+.hide{display:none!important}
+
+/* ══════════ 通用零件 ══════════ */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:36px;padding:0 15px;
+  border-radius:var(--r-s);background:var(--bg3);border:1px solid var(--line2);color:var(--t0);
+  font-size:13.5px;font-weight:500;white-space:nowrap;transition:.15s;user-select:none}
+.btn:hover{background:var(--bg4);border-color:#33493d}
+.btn:active{transform:translateY(1px)}
+.btn:disabled{opacity:.42;cursor:not-allowed;transform:none}
+.btn.pri{background:linear-gradient(180deg,var(--g500),var(--g600));border-color:transparent;color:#032417;font-weight:600}
+.btn.pri:hover{filter:brightness(1.07)}
+.btn.dan{background:transparent;border-color:#4a2222;color:var(--danger)}
+.btn.dan:hover{background:var(--danger-bg)}
+.btn.gho{background:transparent}
+.btn.gho:hover{background:var(--bg3)}
+.btn.sm{height:30px;padding:0 11px;font-size:12.5px;border-radius:7px}
+.btn.blk{width:100%}
+.btn .ld{width:13px;height:13px;border:2px solid currentColor;border-top-color:transparent;
+  border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.fld{display:block}
+.fld>span{display:block;font-size:12.5px;color:var(--t2);margin-bottom:7px;font-weight:500}
+.inp{width:100%;height:40px;padding:0 13px;border-radius:var(--r-s);background:var(--bg1);
+  border:1px solid var(--line2);outline:none;transition:.15s}
+.inp:focus{border-color:var(--g600);background:var(--bg2);box-shadow:0 0 0 3px rgba(18,160,94,.14)}
+.inp::placeholder{color:var(--t3)}
+textarea.inp{height:auto;min-height:96px;padding:11px 13px;resize:vertical;line-height:1.6}
+
+.chip{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 13px;border-radius:var(--pill);
+  background:var(--bg2);border:1px solid var(--line);color:var(--t1);font-size:12.5px;transition:.15s}
+.chip:hover{border-color:var(--line2);color:var(--t0)}
+.chip.on{background:rgba(36,201,124,.13);border-color:var(--g600);color:var(--g300);font-weight:500}
+.chip b{font-weight:600;font-variant-numeric:tabular-nums;opacity:.75}
+
+.badge{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 9px;border-radius:6px;
+  font-size:11.5px;font-weight:600;letter-spacing:.02em;white-space:nowrap}
+.badge.super{background:linear-gradient(135deg,#7C4DFF,#4A2FB8);color:#fff}
+.badge.admin{background:rgba(36,201,124,.16);color:var(--g300);box-shadow:inset 0 0 0 1px rgba(36,201,124,.3)}
+.badge.user{background:var(--bg3);color:var(--t2)}
+.badge.ok{background:rgba(74,222,128,.14);color:var(--g400)}
+.badge.pend{background:var(--warn-bg);color:var(--warn)}
+.badge.no{background:var(--danger-bg);color:var(--danger)}
+
+.dot{width:8px;height:8px;border-radius:50%;background:var(--t3);flex:0 0 auto}
+.dot.on{background:var(--g400);box-shadow:0 0 0 3px rgba(74,222,128,.16)}
+.dot.hid{background:var(--warn);box-shadow:0 0 0 3px rgba(240,180,41,.15)}
+
+.card{background:var(--bg1);border:1px solid var(--line);border-radius:var(--r-l);padding:20px 22px}
+.card>h3{margin:0 0 4px;font-size:15px;font-weight:600}
+.card .desc{color:var(--t2);font-size:12.5px;margin:0 0 16px}
+.sec-h{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;margin:0 0 14px;flex-wrap:wrap}
+.sec-h h2{margin:0;font-size:17px;font-weight:600;letter-spacing:-.01em}
+.sec-h p{margin:4px 0 0;color:var(--t2);font-size:12.5px}
+
+/* ══════════ 登录闸门 ══════════ */
+.gate{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:22px;
+  background:radial-gradient(1200px 700px at 20% -10%,#0d2a1e 0%,var(--bg0) 62%);overflow:auto;z-index:60}
+.gate .box{width:100%;max-width:390px;background:var(--bg1);border:1px solid var(--line);
+  border-radius:var(--r-xl);padding:34px 30px 28px;box-shadow:var(--sh);animation:rise .5s cubic-bezier(.2,.8,.3,1)}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.gate .brandrow{display:flex;align-items:center;gap:13px;margin-bottom:22px}
+.gate .brandrow img{width:52px;height:52px;border-radius:14px;display:block}
+.gate h1{margin:0;font-size:19px;font-weight:600;letter-spacing:-.01em}
+.gate .tag{color:var(--t2);font-size:12.5px;margin-top:2px}
+.gate .fld+.fld{margin-top:15px}
+.gate .msg{margin-top:14px;font-size:12.5px;color:var(--danger);min-height:18px;line-height:1.5}
+.gate .msg.ok{color:var(--g400)}
+.gate .foot{margin-top:18px;font-size:12px;color:var(--t2);text-align:center;line-height:1.7}
+.gate .adv{margin-top:16px;border-top:1px solid var(--line);padding-top:14px}
+.gate .adv summary{cursor:pointer;color:var(--t2);font-size:12.5px;list-style:none;user-select:none}
+.gate .adv summary::-webkit-details-marker{display:none}
+.gate .adv summary::before{content:"›";display:inline-block;margin-right:6px;transition:.2s;color:var(--t3)}
+.gate .adv[open] summary::before{transform:rotate(90deg)}
+.gate .adv .inp{margin-top:11px;height:38px;font-size:13px}
+
+/* ══════════ 主壳 ══════════ */
+.shell{display:grid;grid-template-columns:var(--side) 1fr;height:100%}
+.side{background:var(--bg1);border-right:1px solid var(--line);display:flex;flex-direction:column;
+  padding:18px 13px 14px;gap:4px;overflow:hidden}
+.side .brand{display:flex;align-items:center;gap:11px;padding:0 8px 18px}
+.side .brand img{width:34px;height:34px;border-radius:10px;display:block}
+.side .brand b{font-size:14.5px;font-weight:600;letter-spacing:-.01em;display:block;line-height:1.25}
+.side .brand i{font-style:normal;font-size:11px;color:var(--t2);letter-spacing:.06em;text-transform:uppercase}
+.side .grp{font-size:11px;font-weight:600;letter-spacing:.1em;color:var(--t3);padding:14px 9px 6px;text-transform:uppercase}
+.nav{display:flex;align-items:center;gap:11px;height:38px;padding:0 10px;border-radius:var(--r-s);
+  color:var(--t1);font-size:13.5px;font-weight:500;transition:.15s;text-align:left;width:100%}
+.nav:hover{background:var(--bg2);color:var(--t0)}
+.nav.on{background:rgba(36,201,124,.12);color:var(--g300)}
+.nav.on .ic{color:var(--g400)}
+.nav .ic{width:17px;height:17px;flex:0 0 auto;color:var(--t2);transition:.15s}
+.nav .cnt{margin-left:auto;background:var(--bg3);color:var(--t1);font-size:11px;font-weight:600;
+  min-width:20px;height:19px;border-radius:var(--pill);display:flex;align-items:center;justify-content:center;padding:0 6px}
+.nav.on .cnt{background:rgba(36,201,124,.2);color:var(--g300)}
+.nav .cnt.warn{background:var(--warn-bg);color:var(--warn)}
+.side .spacer{flex:1}
+.who{display:flex;align-items:center;gap:10px;padding:10px;border-radius:var(--r-m);background:var(--bg2);
+  border:1px solid var(--line);cursor:pointer;transition:.15s}
+.who:hover{border-color:var(--line2)}
+.who .av{width:32px;height:32px;border-radius:9px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:13px;color:#032417}
+.who .tx{min-width:0;flex:1}
+.who .tx b{display:block;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.who .tx i{font-style:normal;font-size:11px;color:var(--t2)}
+
+.main{display:flex;flex-direction:column;min-width:0;overflow:hidden}
+.top{height:var(--top);flex:0 0 auto;display:flex;align-items:center;gap:14px;padding:0 24px;
+  border-bottom:1px solid var(--line);background:rgba(12,19,16,.86);backdrop-filter:blur(14px)}
+.top .hamb{display:none;width:36px;height:36px;align-items:center;justify-content:center;border-radius:var(--r-s);color:var(--t1)}
+.top .hamb:hover{background:var(--bg2)}
+.top .ttl{min-width:0}
+.top .ttl h2{margin:0;font-size:16px;font-weight:600;letter-spacing:-.01em;line-height:1.25}
+.top .ttl p{margin:1px 0 0;font-size:12px;color:var(--t2)}
+.top .sp{flex:1}
+.views{flex:1;overflow:auto;padding:24px;scroll-behavior:smooth}
+.view{max-width:1180px;margin:0 auto;animation:fade .28s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* KPI */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:13px;margin-bottom:20px}
+.kpi{background:var(--bg1);border:1px solid var(--line);border-radius:var(--r-m);padding:16px 17px;position:relative;overflow:hidden}
+.kpi .lb{font-size:12px;color:var(--t2);display:flex;align-items:center;gap:6px}
+.kpi .nm{font-size:27px;font-weight:600;letter-spacing:-.02em;margin-top:7px;font-variant-numeric:tabular-nums;line-height:1.05}
+.kpi .nm small{font-size:13px;font-weight:500;color:var(--t2);margin-left:3px}
+.kpi .ft{font-size:11.5px;color:var(--t2);margin-top:6px;display:flex;align-items:center;gap:6px}
+.kpi.hl{background:linear-gradient(150deg,rgba(36,201,124,.13),var(--bg1) 62%);border-color:#204534}
+
+.grid2{display:grid;grid-template-columns:1.35fr 1fr;gap:16px}
+.grid2+.grid2{margin-top:16px}
+.rank{display:flex;align-items:center;gap:13px;padding:11px 0;border-bottom:1px solid var(--line)}
+.rank:last-child{border-bottom:0;padding-bottom:0}
+.rank .no{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:700;background:var(--bg3);color:var(--t1);flex:0 0 auto}
+.rank:nth-child(1) .no{background:linear-gradient(135deg,#F5C842,#C99500);color:#3a2b00}
+.rank:nth-child(2) .no{background:linear-gradient(135deg,#D8E0E6,#9AA7B0);color:#2b3238}
+.rank:nth-child(3) .no{background:linear-gradient(135deg,#E0A16A,#B36C33);color:#3a2100}
+.rank .tx{flex:1;min-width:0}
+.rank .tx b{display:block;font-size:13.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rank .tx i{font-style:normal;font-size:11.5px;color:var(--t2)}
+.rank .vv{font-size:13px;font-variant-numeric:tabular-nums;color:var(--g300);font-weight:600}
+
+.kv{display:grid;grid-template-columns:104px 1fr;gap:9px 14px;font-size:13px;align-items:baseline}
+.kv dt{color:var(--t2);font-size:12.5px}
+.kv dd{margin:0;word-break:break-all;font-variant-numeric:tabular-nums}
+.kv dd.mono{font-family:var(--mono);font-size:12px;color:var(--t1)}
+
+/* 表格 / 列表 */
+.tools{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:15px}
+.tools .search{position:relative;flex:1;min-width:190px;max-width:330px}
+.tools .search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:var(--t3);pointer-events:none}
+.tools .search .inp{padding-left:33px;height:38px}
+.chips{display:flex;gap:7px;flex-wrap:wrap}
+
+.tw{background:var(--bg1);border:1px solid var(--line);border-radius:var(--r-l);overflow:hidden}
+table{width:100%;border-collapse:collapse}
+thead th{text-align:left;font-size:11.5px;font-weight:600;color:var(--t2);letter-spacing:.04em;
+  padding:12px 15px;border-bottom:1px solid var(--line);background:var(--bg2);white-space:nowrap;position:sticky;top:0;z-index:2}
+tbody td{padding:12px 15px;border-bottom:1px solid var(--line);font-size:13px;vertical-align:middle}
+tbody tr{transition:.12s}
+tbody tr:last-child td{border-bottom:0}
+tbody tr.clk{cursor:pointer}
+tbody tr.clk:hover{background:var(--bg2)}
+.cell-u{display:flex;align-items:center;gap:10px;min-width:0}
+.av{width:32px;height:32px;border-radius:9px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:12.5px;color:#032417}
+.cell-u .tx{min-width:0}
+.cell-u .tx b{display:block;font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:170px}
+.cell-u .tx i{font-style:normal;font-size:11.5px;color:var(--t2);font-family:var(--mono)}
+.num{font-variant-numeric:tabular-nums}
+.t2{color:var(--t2)}
+.tiny{font-size:11.5px}
+.nowrap{white-space:nowrap}
+.acts{display:flex;gap:6px;justify-content:flex-end}
+
+.empty{text-align:center;padding:60px 22px;color:var(--t2)}
+.empty svg{width:44px;height:44px;color:var(--t3);margin-bottom:12px}
+.empty b{display:block;color:var(--t1);font-size:14px;font-weight:500;margin-bottom:5px}
+.empty span{font-size:12.5px}
+
+.sk{background:linear-gradient(90deg,var(--bg2) 25%,var(--bg3) 50%,var(--bg2) 75%);
+  background-size:200% 100%;animation:sweep 1.3s linear infinite;border-radius:6px;height:13px}
+@keyframes sweep{to{background-position:-200% 0}}
+
+/* 审核卡 */
+.audit-list{display:flex;flex-direction:column;gap:12px}
+.aud{background:var(--bg1);border:1px solid var(--line);border-radius:var(--r-m);padding:15px 17px;
+  display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.aud .meta{flex:1;min-width:210px}
+.aud .meta b{display:block;font-size:14px;font-weight:500}
+.aud .meta .sub{font-size:12.5px;color:var(--t2);margin-top:4px;display:flex;gap:12px;flex-wrap:wrap}
+.aud audio{height:34px;max-width:280px;flex:1;min-width:180px}
+.aud .ops{display:flex;gap:7px;align-items:center}
+
+/* 抽屉 */
+.mask{position:fixed;inset:0;background:rgba(3,6,4,.62);backdrop-filter:blur(2px);opacity:0;
+  pointer-events:none;transition:.22s;z-index:40}
+.mask.on{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(452px,100%);background:var(--bg1);
+  border-left:1px solid var(--line);z-index:41;display:flex;flex-direction:column;
+  transform:translateX(102%);transition:transform .3s cubic-bezier(.2,.8,.3,1);box-shadow:var(--sh)}
+.drawer.on{transform:none}
+.drawer .dh{display:flex;align-items:center;gap:13px;padding:18px 20px;border-bottom:1px solid var(--line);flex:0 0 auto}
+.drawer .dh .tx{flex:1;min-width:0}
+.drawer .dh b{display:block;font-size:15px;font-weight:600}
+.drawer .dh i{font-style:normal;font-size:12px;color:var(--t2)}
+.drawer .x{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--t2)}
+.drawer .x:hover{background:var(--bg3);color:var(--t0)}
+.drawer .db{flex:1;overflow:auto;padding:20px}
+.drawer .df{flex:0 0 auto;padding:14px 20px;border-top:1px solid var(--line);display:flex;gap:8px;
+  background:var(--bg2);flex-wrap:wrap}
+.dsec+.dsec{margin-top:24px}
+.dsec>h4{margin:0 0 10px;font-size:12px;font-weight:600;color:var(--t2);letter-spacing:.06em;text-transform:uppercase}
+.mini{display:flex;flex-direction:column;gap:1px}
+.mini .it{display:flex;gap:10px;padding:9px 11px;border-radius:var(--r-s);font-size:13px;align-items:baseline}
+.mini .it:nth-child(odd){background:var(--bg2)}
+.mini .it .idx{color:var(--t3);font-size:11.5px;font-family:var(--mono);width:20px;flex:0 0 auto}
+.mini .it .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mini .it .ar{color:var(--t2);font-size:12px;flex:0 0 auto;max-width:112px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* 弹窗 */
+.modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:22px;z-index:50;padding-bottom:max(22px,env(safe-area-inset-bottom))}
+.modal .mbox{width:100%;max-width:420px;background:var(--bg1);border:1px solid var(--line2);
+  border-radius:var(--r-l);box-shadow:var(--sh);animation:rise .24s cubic-bezier(.2,.8,.3,1);overflow:hidden}
+.modal .mh{padding:20px 22px 0}
+.modal .mh b{font-size:15.5px;font-weight:600;display:block}
+.modal .mh p{margin:7px 0 0;font-size:13px;color:var(--t2);line-height:1.6}
+.modal .mb{padding:17px 22px 20px}
+.modal .mb .fld+.fld{margin-top:13px}
+.modal .mf{display:flex;gap:9px;justify-content:flex-end;padding:0 22px 20px}
+
+/* toast */
+.toasts{position:fixed;right:20px;bottom:20px;display:flex;flex-direction:column;gap:9px;z-index:70;
+  pointer-events:none;max-width:min(360px,calc(100vw - 32px))}
+.toast{background:var(--bg3);border:1px solid var(--line2);border-left:3px solid var(--g500);
+  border-radius:var(--r-s);padding:11px 15px;font-size:13px;box-shadow:var(--sh);
+  animation:tin .26s cubic-bezier(.2,.8,.3,1);display:flex;gap:9px;align-items:flex-start}
+.toast.err{border-left-color:var(--danger)}
+.toast.warn{border-left-color:var(--warn)}
+@keyframes tin{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:none}}
+.toast.out{opacity:0;transform:translateX(24px);transition:.22s}
+
+/* 实时通知：注册 / 注销。
+   沿用本文件「卡 = h3 + .desc」的卡片语言，不另起一套。
+   分级：注销 = 危险级（红），注册 = 普通级（绿）。
+   按设置页「账号与安全」那条规矩 —— 越危险越不能做成大按钮，
+   所以两级的确认都是一行最轻的文字按钮，只有颜色不同。 */
+.rtpops{position:fixed;right:20px;bottom:20px;display:flex;flex-direction:column;gap:9px;z-index:75;
+  max-width:min(360px,calc(100vw - 32px))}
+.rtpop{background:var(--bg1);border:1px solid var(--line);border-left:3px solid var(--g500);
+  border-radius:var(--r-l);padding:14px 16px;box-shadow:var(--sh);
+  animation:tin .26s cubic-bezier(.2,.8,.3,1)}
+.rtpop h3{margin:0;font-size:14px;font-weight:600}
+.rtpop .desc{color:var(--t2);font-size:12.5px;margin:5px 0 0;line-height:1.6}
+.rtpop.danger{border-left-color:var(--danger)}
+.rtpop.danger h3{color:var(--danger)}
+/* 视觉重量最轻：没有边框、没有底色，就是一行能点的字 */
+.rtpop .rtx{margin-top:9px;font-size:12.5px;color:var(--t2);background:none;border:0;padding:0;
+  cursor:pointer;line-height:1.4}
+.rtpop .rtx:hover{color:var(--t0)}
+.rtpop.out{opacity:0;transform:translateX(24px);transition:.22s}
+
+/* 隐私政策：正文 + 两处入口（登录页、设置页）。
+   入口做成一行能点的字，不抢登录按钮的戏 —— 跟实时通知同一个规矩。 */
+.plink{display:inline-block;font-size:12.5px;color:var(--t2);background:none;border:0;padding:0;
+  cursor:pointer;text-decoration:underline;line-height:1.5}
+.plink:hover{color:var(--t1)}
+.gate .foot+.plinkwrap{margin-top:10px;text-align:center}
+.pp{font-size:13px;line-height:1.75;color:var(--t1)}
+.pp .pp-meta{color:var(--t3);font-size:12px;margin:0 0 10px}
+.pp h4{margin:16px 0 6px;font-size:13.5px;font-weight:600;color:var(--t0)}
+.pp ul,.pp ol{margin:6px 0;padding-left:20px}
+.pp li{margin:3px 0}
+.pp b{color:var(--t0);font-weight:600}
+
+/* 手机 */
+.burger-mask{display:none}
+@media (max-width:900px){
+  :root{--top:56px}
+  .shell{grid-template-columns:1fr}
+  .side{position:fixed;top:0;bottom:0;left:0;width:270px;z-index:45;transform:translateX(-102%);
+    transition:transform .28s cubic-bezier(.2,.8,.3,1);box-shadow:var(--sh)}
+  .side.on{transform:none}
+  .burger-mask{display:block;position:fixed;inset:0;background:rgba(3,6,4,.6);opacity:0;pointer-events:none;
+    transition:.22s;z-index:44}
+  .burger-mask.on{opacity:1;pointer-events:auto}
+  .top{padding:0 15px}
+  .top .hamb{display:flex}
+  .views{padding:16px 14px calc(16px + env(safe-area-inset-bottom))}
+  .grid2{grid-template-columns:1fr}
+  .kpis{grid-template-columns:repeat(2,1fr);gap:10px}
+  .kpi{padding:13px 14px}
+  .kpi .nm{font-size:23px}
+  .card{padding:16px 16px;border-radius:var(--r-m)}
+  .tw{border-radius:var(--r-m)}
+  thead{display:none}
+  tbody tr{display:block;padding:13px 15px;border-bottom:1px solid var(--line)}
+  tbody tr:last-child{border-bottom:0}
+  tbody td{display:flex;justify-content:space-between;gap:14px;padding:4px 0;border:0;font-size:13px;text-align:right}
+  tbody td::before{content:attr(data-l);color:var(--t2);font-size:12.5px;flex:0 0 auto;text-align:left}
+  /* 首列是「身份证」，顶格显示、不要标签，当作卡片抬头 */
+  tbody td:first-child{padding:0 0 10px;justify-content:flex-start}
+  tbody td:first-child::before{display:none}
+  tbody td:first-child .cell-u .tx b{font-size:14.5px}
+  /* 操作列在手机上不能藏起来 —— 藏了就点不进详情了，改成整行大按钮 */
+  tbody td.cell-act{padding-top:10px}
+  tbody td.cell-act>div{width:100%}
+  tbody td.cell-act .btn{width:100%;height:36px}
+  .aud{flex-direction:column;align-items:stretch;gap:11px}
+  .aud audio{max-width:none}
+  .drawer{width:100%;border-left:0}
+  .toasts{right:12px;left:12px;bottom:calc(12px + env(safe-area-inset-bottom));max-width:none}
+  .gate{padding:16px;align-items:flex-start;padding-top:12vh}
+}
+@media (max-width:380px){.kpis{grid-template-columns:1fr}}
+
+/* ══════════ 原生窗口标题栏（Electron 无边框窗口） ══════════
+   管理端 exe 是 frame:false 的无边框窗口（desktop-admin/main.js:253），
+   系统不给我们标题栏，于是自绘一条：拖动靠 -webkit-app-region:drag，
+   最小化/最大化/关闭走预加载脚本 bridge 出来的 window.ymNative 通知主进程。
+
+   ⚠️ 只在 body.is-native 下显示 —— 这个类由页面 JS 在检测到 window.ymNative
+      存在时才加上。浏览器里直接打开 admin.html 时没有预加载脚本，
+      拿不到这个类，标题栏整条不出现，也就不会冒出一排点不动的按钮。 */
+:root{--tb-h:38px}
+.titlebar{
+  display:none; position:relative; z-index:100; flex:0 0 auto;
+  height:var(--tb-h); align-items:center; gap:10px; padding:0 0 0 14px;
+  background:var(--bg1); border-bottom:1px solid var(--line);
+  -webkit-app-region:drag; user-select:none;
+}
+body.is-native .titlebar{display:flex}
+.tb-left{display:flex;align-items:center;gap:8px;flex:none}
+.tb-left img{width:17px;height:17px;display:block}
+.tb-left b{font-size:12.5px;font-weight:600;letter-spacing:.3px}
+.tb-sub{font-size:11.5px;color:var(--t2)}
+.tb-mid{
+  flex:1;min-width:0;text-align:center;font-size:12px;color:var(--t2);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  -webkit-app-region:drag;
+}
+.tb-mid code{background:var(--bg2);padding:1px 6px;border-radius:4px;color:var(--g300);font-size:11.5px}
+.tb-win{display:flex;flex:none;-webkit-app-region:no-drag}
+.tb-win button{
+  width:44px;height:var(--tb-h);display:grid;place-items:center;color:var(--t1);
+  transition:background .12s,color .12s;
+}
+.tb-win button:hover{background:var(--bg3);color:var(--t0)}
+.tb-win button.danger:hover{background:#C0392B;color:#fff}
+/* 最大化之后把「□」换成「还原」那两个小方框（跟 index.html 同一套画法） */
+body.is-max .tb-win #winMax svg rect{display:none}
+body.is-max .tb-win #winMax svg{background:
+  linear-gradient(currentColor,currentColor) 3px 3px/6px 1.2px no-repeat,
+  linear-gradient(currentColor,currentColor) 3px 3px/1.2px 6px no-repeat,
+  linear-gradient(currentColor,currentColor) 2.6px 6.8px/6px 1.2px no-repeat,
+  linear-gradient(currentColor,currentColor) 7.4px 6.8px/1.2px 4.4px no-repeat}
+
+/* 原生窗口下 body 改成竖排：标题栏固定 38px，主壳吃掉剩下的高度。
+   不这么做的话 .shell 的 height:100% 会把窗口撑出 38px，底部被切掉。 */
+body.is-native{display:flex;flex-direction:column}
+body.is-native .shell{flex:1 1 auto;min-height:0;height:auto}
+/* 登录闸门 / 详情抽屉都是 position:fixed;top:0 —— 让出标题栏那 38px，
+   否则登录框和抽屉会顶到标题栏底下被压住 */
+body.is-native .gate{top:var(--tb-h)}
+body.is-native .drawer{top:var(--tb-h)}
+</style>
+</head>
+<body>
+
+<!-- ══ 原生窗口标题栏：只在 exe 原生窗口（Electron）里显示 ══
+     无边框窗口靠它拖拽移动；最小化/最大化/关闭走 IPC 交给主进程。
+     浏览器里直接打开本页面时 window.ymNative 不存在，整条不显示。 -->
+<div class="titlebar" id="titlebar">
+  <div class="tb-left">
+    <img src="logo-mark.svg" alt="" onerror="this.style.display='none'">
+    <b>YMusic</b>
+    <span class="tb-sub">管理台</span>
+  </div>
+  <div class="tb-mid" id="tbAddr"></div>
+  <div class="tb-win">
+    <button id="winMin" title="最小化" aria-label="最小化">
+      <svg width="12" height="12" viewBox="0 0 12 12"><rect x="1.5" y="5.5" width="9" height="1.2" rx=".6" fill="currentColor"/></svg>
+    </button>
+    <button id="winMax" title="最大化 / 还原" aria-label="最大化">
+      <svg width="12" height="12" viewBox="0 0 12 12"><rect x="2" y="2" width="8" height="8" rx="1.4" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>
+    </button>
+    <button id="winClose" class="danger" title="关闭" aria-label="关闭">
+      <svg width="12" height="12" viewBox="0 0 12 12"><path d="M2.6 2.6l6.8 6.8M9.4 2.6l-6.8 6.8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- ══ 登录 ══ -->
+<div class="gate" id="gate">
+  <div class="box">
+    <div class="brandrow">
+      <img src="logo-mark.svg" alt="YMusic" onerror="this.style.display='none'">
+      <div>
+        <h1>YMusic 管理台</h1>
+        <div class="tag">开发者控制中心</div>
+      </div>
+    </div>
+
+    <label class="fld"><span>账号</span>
+      <input class="inp" id="gAcct" type="text" inputmode="email" autocomplete="username"
+             placeholder="手机号 或 邮箱"></label>
+    <label class="fld"><span>密码</span>
+      <input class="inp" id="gPass" type="password" autocomplete="current-password" placeholder="登录密码"></label>
+    <div class="msg" id="gMsg"></div>
+    <button class="btn pri blk" id="gGo" style="height:42px;margin-top:4px">登 录</button>
+
+    <details class="adv" id="gAdv">
+      <summary>服务器设置</summary>
+      <input class="inp" id="gBase" type="text" inputmode="url" placeholder="https://your-server">
+      <div class="msg" style="color:var(--t2)">留空表示用当前网址。EXE / APK 版填主服务的公网地址。</div>
+    </details>
+
+    <div class="foot">只有管理员和开发者账号能进入这里。<br>忘记密码请在手机 App 里用邮箱找回。</div>
+    <div class="plinkwrap"><button class="plink" id="gPrivacy" type="button">隐私政策</button></div>
+  </div>
+</div>
+
+<!-- ══ 主壳 ══ -->
+<div class="shell hide" id="shell">
+  <aside class="side" id="side">
+    <div class="brand">
+      <img src="logo-mark.svg" alt="" onerror="this.style.display='none'">
+      <div><b>YMusic</b><i>管理台</i></div>
+    </div>
+    <div class="navwrap" id="navWrap"></div>
+    <div class="spacer"></div>
+    <div class="who" id="who">
+      <div class="av" id="whoAv">·</div>
+      <div class="tx"><b id="whoName">—</b><i id="whoRole">—</i></div>
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" style="color:#5d7368;flex:0 0 auto"><path d="m9 18 6-6-6-6"/></svg>
+    </div>
+  </aside>
+  <div class="burger-mask" id="burgerMask"></div>
+
+  <div class="main">
+    <header class="top">
+      <button class="hamb" id="hamb" aria-label="菜单">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      </button>
+      <div class="ttl"><h2 id="vTitle">概览</h2><p id="vSub">—</p></div>
+      <div class="sp"></div>
+      <button class="btn sm gho" id="btnSync" title="刷新">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 12a9 9 0 0 1 15.5-6.2M21 12a9 9 0 0 1-15.5 6.2"/><path d="M18 3v5h-5M6 21v-5h5"/></svg>
+        <span>刷新</span>
+      </button>
+    </header>
+    <div class="views" id="views"></div>
+  </div>
+</div>
+
+<div class="mask" id="mask"></div>
+<div class="drawer" id="drawer"></div>
+<div id="modals"></div>
+<div class="toasts" id="toasts"></div>
+<div class="rtpops" id="rtPops"></div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════════
+   YMusic 管理台 —— 网页版 / EXE / APK 三端共用同一份代码
+   后端走主服务的 /api/admin/*，Authorization: Bearer <管理员 token>
+   ═══════════════════════════════════════════════════════════════════════ */
+(function () {
+  'use strict';
+
+  /* 打包 EXE / APK 时会把这里替换成主服务公网地址；
+     直接由服务端托管时保持原样，自动落回当前网址。 */
+  var BAKED_BASE = '%YM_DEFAULT_BASE%';
+  if (BAKED_BASE.indexOf('%YM_DEFAULT_BASE%') === 0) BAKED_BASE = '';
+
+  var LS_BASE = 'ym.adm.base', LS_TOKEN = 'ym.adm.token';
+  var state = { base: '', token: '', me: null, view: 'overview', counts: {}, service: null, data: {} };
+
+  /* ───────── 工具 ───────── */
+  function $(s, r) { return (r || document).querySelector(s); }
+  function $$(s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); }
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c];
+    });
+  }
+  function el(html) { var d = document.createElement('div'); d.innerHTML = html.trim(); return d.firstChild; }
+  function nfmt(n) { n = n | 0; return n >= 10000 ? (n / 10000).toFixed(n >= 100000 ? 0 : 1) + '万' : String(n); }
+  function dur(ms) {
+    ms = ms | 0; if (ms <= 0) return '—';
+    var m = Math.floor(ms / 60000);
+    if (m < 1) return '不到 1 分钟';
+    if (m < 60) return m + ' 分钟';
+    var h = Math.floor(m / 60);
+    return h + ' 小时 ' + (m % 60) + ' 分';
+  }
+  function ago(t) {
+    if (!t) return '—';
+    var d = Date.now() - t;
+    if (d < 0) d = 0;
+    if (d < 60000) return '刚刚';
+    if (d < 3600000) return Math.floor(d / 60000) + ' 分钟前';
+    if (d < 86400000) return Math.floor(d / 3600000) + ' 小时前';
+    if (d < 86400000 * 30) return Math.floor(d / 86400000) + ' 天前';
+    return new Date(t).toLocaleDateString('zh-CN');
+  }
+  function date(t) { return t ? new Date(t).toLocaleString('zh-CN', { hour12: false }) : '—'; }
+  function size(b) {
+    if (!b) return '—';
+    return b > 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB';
+  }
+  /* 头像底色：[浅, 深] 两个同色系色值，拼成 135° 渐变 */
+  var HUES = [['#6EE7C4', '#12A05E'], ['#4ADE80', '#15803D'], ['#A3E635', '#4D7C0F'],
+              ['#F0B429', '#B45309'], ['#F472B6', '#9D174D'], ['#A78BFA', '#5B21B6'],
+              ['#60A5FA', '#1D4ED8'], ['#FB923C', '#C2410C']];
+  function hash(s) { var h = 0; s = String(s || 'x'); for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return Math.abs(h); }
+  function hueOf(s) { return HUES[hash(s) % HUES.length]; }
+  function grad(seed) { var c = hueOf(seed); return 'linear-gradient(135deg,' + c[0] + ',' + c[1] + ')'; }
+  /* 有真头像（已过审）就显示图，没有就退回首字渐变块。
+     size 之外的第 4 个参数是服务端给的头像地址（相对路径，调用方要拼 base()）。 */
+  function avatar(seed, name, size, url) {
+    var s = size || 32;
+    var ch = String(name || '?').trim().charAt(0) || '?';
+    if (url) {
+      return '<div class="av" style="width:' + s + 'px;height:' + s + 'px;overflow:hidden;background:#16211b">' +
+        '<img src="' + esc(url) + '" alt="" style="width:100%;height:100%;object-fit:cover;display:block"></div>';
+    }
+    return '<div class="av" style="width:' + s + 'px;height:' + s + 'px;font-size:' + Math.round(s * 0.4) +
+      'px;background:' + grad(seed) + '">' + esc(ch) + '</div>';
+  }
+  /* 服务端给的是 /api/avatar/file?id=… 这种相对路径，管理台可能挂在别的地址上 */
+  function avUrl(p) { return p ? base() + p : ''; }
+  function roleBadge(r) {
+    if (r === 'superadmin') return '<span class="badge super">开发者</span>';
+    if (r === 'admin') return '<span class="badge admin">管理员</span>';
+    return '<span class="badge user">用户</span>';
+  }
+
+  /* ───────── 提示 ───────── */
+  function toast(msg, kind, ms) {
+    var t = el('<div class="toast ' + (kind || '') + '">' + esc(msg) + '</div>');
+    $('#toasts').appendChild(t);
+    setTimeout(function () {
+      t.classList.add('out');
+      setTimeout(function () { t.remove(); }, 240);
+    }, ms || (kind === 'err' ? 4200 : 2600));
+  }
+
+  /* ───────── 实时通知：新用户注册 / 账号注销 ─────────
+     只报这两件：注册是「有人进来了」，注销是「有人没了、且不可逆」。
+     登出（退出登录）不报 —— 它高频又没信息量，报了会把真正重要的销户信号淹掉；
+     在线 / 离线本来就在账号列表里静态显示，不需要再弹一次。
+
+     做法：定时拉 /api/admin/users 做 uid 差集。
+     为什么是轮询不是推送：推送要改主服务的 server.mjs，而它现在有未验收的在飞改动，
+     本次不动它。等那边落地了换成 SSE / WebSocket 时，前端这段不用改。 */
+  /* RT_GAP 20 秒：管理台是长开的页面，间隔不能太密。
+     RT_MAX：一次变化超过这么多就合并成一条，避免挂后台一晚上回来弹满屏。 */
+  var RT_SEEN = null, RT_TIMER = 0, RT_GAP = 20000, RT_MAX = 5;
+  function rtName(r) { return (r && r.username) ? r.username : '未填写昵称'; }
+  function rtPop(kind, title, desc) {
+    var box = document.getElementById('rtPops');
+    if (!box) return;
+    var danger = kind === 'danger';
+    var d = el('<div class="rtpop' + (danger ? ' danger' : '') + '">' +
+      '<h3>' + esc(title) + '</h3>' +
+      '<p class="desc">' + esc(desc) + '</p>' +
+      '<button class="rtx" type="button" data-rtx="1">知道了</button>' +
+      '</div>');
+    function close() {
+      d.classList.add('out');
+      setTimeout(function () { if (d.parentNode) d.parentNode.removeChild(d); }, 240);
+    }
+    d.querySelector('[data-rtx]').addEventListener('click', close);
+    box.appendChild(d);
+    /* 注销不自动收起：不可逆的事不能一闪而过，得让人点掉。
+       注册只是知会一声，到点自己收。 */
+    if (!danger) setTimeout(close, 9000);
+  }
+  function rtScan() {
+    if (!state.token) return;
+    /* 页面在后台就别轮询了：没人看的时候没必要打服务端 */
+    if (document.visibilityState === 'hidden') return;
+    api('/api/admin/users').then(function (j) {
+      if (!j || !j.ok || !j.rows) return;
+      var now = {}, i, r, uid;
+      for (i = 0; i < j.rows.length; i++) {
+        r = j.rows[i];
+        if (r && r.uid) now[r.uid] = r;
+      }
+      /* 第一次只建基线：不然刚打开就会把全量用户当成「新注册」弹一遍 */
+      if (RT_SEEN === null) { RT_SEEN = now; return; }
+      var added = [], removed = [];
+      for (uid in now) { if (!RT_SEEN[uid]) added.push(now[uid]); }
+      for (uid in RT_SEEN) { if (!now[uid]) removed.push(RT_SEEN[uid]); }
+      RT_SEEN = now;
+      /* 注销先弹：不可逆的事排在前面。
+         变化太多（页面挂后台一晚上）就合并成一条，不然会弹满屏把人淹了。 */
+      if (removed.length > RT_MAX) {
+        rtPop('danger', '账号已注销', '有 ' + removed.length +
+          ' 个账号被注销，账号连同收藏、最近播放一起删除，无法恢复。');
+      } else {
+        for (i = 0; i < removed.length; i++) {
+          rtPop('danger', '账号已注销',
+            rtName(removed[i]) + ' 已注销账号，账号连同收藏、最近播放一起删除，无法恢复。');
+        }
+      }
+      if (added.length > RT_MAX) {
+        rtPop('normal', '新用户注册', '有 ' + added.length + ' 个新用户注册了账号。');
+      } else {
+        for (i = 0; i < added.length; i++) {
+          rtPop('normal', '新用户注册', rtName(added[i]) + ' 刚刚注册了账号。');
+        }
+      }
+    });
+  }
+  function rtWake() {
+    /* 从后台切回来立刻补一次，不然要白等满一个间隔 */
+    if (document.visibilityState === 'visible' && state.token) rtScan();
+  }
+  function rtStart() {
+    RT_SEEN = null;                       /* 换账号 / 重新登录都重建基线 */
+    rtScan();
+    if (RT_TIMER) clearInterval(RT_TIMER);
+    RT_TIMER = setInterval(rtScan, RT_GAP);
+    document.addEventListener('visibilitychange', rtWake);
+  }
+  function rtStop() {
+    if (RT_TIMER) { clearInterval(RT_TIMER); RT_TIMER = 0; }
+    RT_SEEN = null;
+    document.removeEventListener('visibilitychange', rtWake);
+  }
+
+  /* ───────── 隐私政策 ─────────
+     管理台要展示用户的登录端类型和操作系统，必须有据可依。
+     当前是降级版：只显示端类型 + 操作系统名，不显示设备代号（服务端还没把 UA 吐给管理端），
+     所以政策正文里也只写实际展示的这两项 —— 不写没做到的事。
+     正文在仓库里还有一份：docs/隐私政策.md（给业主和用户看的正式文本）。
+     这里是线上版本 —— 因为部署只推 EXPORT 列表里的文件，docs/ 不会上服务器，
+     所以正文内嵌在本文件里。改这份的时候记得同步那份 Markdown。 */
+  function privacyHtml() {
+    return '<div class="pp">' +
+      '<p class="pp-meta">更新日期：2026-10-14</p>' +
+      '<p>YMusic 只采集让账号能正常登录、出问题时能定位的必要信息。下面是完整清单，没有例外。</p>' +
+      '<h4>一、我们采集什么</h4>' +
+      '<p>以下信息在你注册和每次登录时由服务端自动记录，绑定到你的账号：</p>' +
+      '<ul>' +
+      '<li><b>登录端类型</b>（手机 / 平板 / 电脑网页 / 桌面客户端）——判断你从哪类设备登录。出现异常登录时，先确认是不是你本人换了设备。</li>' +
+      '<li><b>操作系统版本</b>（如 Android 13、iOS 17、Windows 11）——异常登录判断，也是排查「某个系统版本上听不了歌」这类问题的依据。</li>' +
+      '<li><b>设备代号</b>（如 SM-G991B、iPhone15,3）——区分同一账号下的不同设备。取不到时显示「未知设备」。</li>' +
+      '<li><b>登录 IP</b>——异常登录判断。管理台展示时对管理员可见。</li>' +
+      '<li><b>在线状态与收听时长</b>——是否在线、本次与累计收听时长、当前播放的歌曲。这是「好友正在听什么」功能本身需要的数据。<b>注意：你在设置里开启隐身后，服务端仍然照常记录</b>，隐身只是让好友看到你离线，不等于停止记录。</li>' +
+      '</ul>' +
+      '<p>这些信息来自你设备的浏览器或客户端在登录时自动上报的标识串（User-Agent）和网络地址。我们不要求你额外授权，也不弹窗索要权限。</p>' +
+      '<h4>二、我们不采集什么</h4>' +
+      '<p>以下信息不采集、不上传、不存储：</p>' +
+      '<ul>' +
+      '<li>通讯录与好友关系链（应用内的好友是你在应用内自行添加的，与手机通讯录无关）</li>' +
+      '<li>地理位置与定位信息</li>' +
+      '<li>通话记录与短信</li>' +
+      '<li>相册、文件与应用列表</li>' +
+      '<li>剪贴板内容</li>' +
+      '<li>麦克风与摄像头</li>' +
+      '<li>广告标识符与跨应用追踪标识</li>' +
+      '<li>生物识别信息</li>' +
+      '</ul>' +
+      '<p>应用不申请以上任何一项的系统权限。</p>' +
+      '<h4>三、这些信息用在哪</h4>' +
+      '<p>仅用于两个目的：</p>' +
+      '<ol>' +
+      '<li><b>账号安全</b>——识别异常登录（陌生设备、陌生地点）。目前只有管理员能在管理台看到账号的登录端类型、系统版本和 IP，用来判断这次登录是不是本人。</li>' +
+      '<li><b>管理端排障</b>——当你反馈「听不了歌」「登录不上」时，管理员据此确认出问题的端类型与系统版本。</li>' +
+      '</ol>' +
+      '<p><b>不用于广告投放，不用于用户画像与推荐，不出售或共享给第三方。</b></p>' +
+      '<h4>四、留存与删除</h4>' +
+      '<ul>' +
+      '<li>上述信息与你的账号一同保存，保留到你注销账号为止。</li>' +
+      '<li><b>注销账号时，这些信息连同账号、收藏、最近播放、好友关系一并删除，且无法恢复。</b></li>' +
+      '<li>在应用内自助注销时，系统会先留存一份账号记录快照，供误操作后人工恢复。<b>这份快照不会自动删除</b>，需要清理时由管理员手动处理。</li>' +
+      '<li><b>上传的歌曲是唯一的例外</b>：注销后歌曲文件与歌曲信息仍保留在站内，其他人点开还能听 —— 这是刻意保留的行为，不属于你的个人信息，不会随账号注销一并删除。</li>' +
+      '<li>登录会话（令牌）在过期或被你主动退出后自动清除。</li>' +
+      '</ul>' +
+      '<h4>五、你可以做什么</h4>' +
+      '<ul>' +
+      '<li>在应用「设置 → 账号与安全 → 登录方式」中修改登录邮箱与密码，改完后其它设备需要重新登录。</li>' +
+      '<li>退出登录，本设备的会话令牌立即失效。</li>' +
+      '<li>注销账号，删除全部数据（上传的歌曲除外，见上一节）。</li>' +
+      '<li>应用内<b>没有</b>「查看登录设备列表」「踢出某台设备」的入口，这两件事目前只能由管理员在管理台处理。</li>' +
+      '</ul>' +
+      '<h4>六、儿童隐私</h4>' +
+      '<p>YMusic 不面向 14 岁以下儿童。若我们发现误收集了儿童信息，会尽快删除。</p>' +
+      '<p>YMusic 由使用它的团队自行部署和运维。如对本政策有疑问，或需要查询、更正、删除你的信息，请联系本服务的管理员。</p>' +
+      '</div>';
+  }
+  function privacyOpen() {
+    modal({
+      title: '隐私政策', okText: '知道了', cancel: false,
+      html: '<div style="max-height:min(60vh,460px);overflow:auto;padding-right:6px">' +
+        privacyHtml() + '</div>'
+    });
+  }
+
+  /* ───────── 设备信息 ─────────
+     只解析三项：端类型 / 操作系统 / 设备代号。
+     不采完整手机型号 —— 那属于更敏感的设备指纹，要采就得先有隐私政策和权限声明，
+     现在没有，所以不采（采集范围见 docs/隐私政策.md 与设置页里的「隐私政策」）。
+
+     服务端登录时已经把 UA 存进了 users.json 的 lastUa，这里优先拿它解析 ——
+     三项全能解析出来。服务端目前还没把 lastUa 吐给管理端，所以先走下面的降级分支：
+     用已经能拿到的 lastDevice / device 推出端类型和操作系统名（拿不到版本号）。
+     等服务端把 lastUa 一吐，版本号和设备代号会自动亮出来，前端这段不用再改。 */
+  function parseUa(ua) {
+    var s = String(ua || ''), m;
+    var out = { kind: '', os: '', code: '' };
+    if (!s) return out;
+    if (/Electron/i.test(s)) out.kind = '桌面客户端';
+    else if (/iPad|Tablet/i.test(s)) out.kind = '平板';
+    else if (/iPhone|iPod|Android|Mobile|HarmonyOS/i.test(s)) out.kind = '手机';
+    else out.kind = '电脑网页';
+
+    if ((m = s.match(/Android\s+([\d.]+)/))) out.os = 'Android ' + m[1];
+    else if ((m = s.match(/OS\s+([\d_]+)\s+like\s+Mac/))) out.os = 'iOS ' + String(m[1]).replace(/_/g, '.');
+    else if ((m = s.match(/Windows\s+NT\s+([\d.]+)/))) {
+      out.os = 'Windows ' + ({ '10.0': '10/11', '6.3': '8.1', '6.2': '8', '6.1': '7' }[m[1]] || m[1]);
+    } else if ((m = s.match(/Mac OS X\s+([\d_.]+)/))) out.os = 'macOS ' + String(m[1]).replace(/_/g, '.');
+    else if (/Android/i.test(s)) out.os = 'Android';
+    else if (/iPhone|iPad|iPod/i.test(s)) out.os = 'iOS';
+    else if (/Linux/i.test(s)) out.os = 'Linux';
+
+    if ((m = s.match(/Android[^;]*;\s*([^;)]+)/))) {
+      out.code = String(m[1]).trim().split(/\s+Build|\s+wv\)|\s+AppleWebKit/)[0].trim();
+    } else if ((m = s.match(/\((iPhone\d+,\d+|iPad\d+,\d+|iPod\d+,\d+)/))) {
+      out.code = m[1];
+    }
+    return out;
+  }
+  function devInfo(r) {
+    var d = parseUa(r && r.lastUa);
+    if (d.os || d.code) return d;                   /* 有 UA：三项齐全 */
+    var lbl = String((r && r.lastDevice) || '');
+    var pd = String((r && r.device) || '');
+    if (!d.kind) {
+      if (lbl === '桌面客户端') d.kind = '桌面客户端';
+      else if (lbl === 'iPad') d.kind = '平板';
+      else if (pd === '安卓' || pd === '苹果' || /^Android/i.test(lbl) || lbl === 'iPhone') d.kind = '手机';
+      else d.kind = '电脑网页';
+    }
+    if (!d.os) {
+      if (/^Android/i.test(lbl)) d.os = 'Android';
+      else if (lbl === 'iPhone' || lbl === 'iPad' || pd === '苹果') d.os = 'iOS';
+      else if (lbl === 'Windows') d.os = 'Windows';
+      else if (lbl === 'Mac') d.os = 'macOS';
+      else if (lbl === 'Linux') d.os = 'Linux';
+    }
+    if (!d.code && /^Android/i.test(lbl)) d.code = lbl;
+    return d;
+  }
+  function devCell(r) {
+    var d = devInfo(r);
+    var sub = [];
+    if (d.os) sub.push(esc(d.os));
+    if (d.code) sub.push(esc(d.code));
+    if (!d.kind && !sub.length) return '<span class="t2">—</span>';
+    return '<div style="display:flex;flex-direction:column;gap:2px">' +
+      '<span>' + (d.kind ? esc(d.kind) : '<span class="t2">未知设备</span>') + '</span>' +
+      (sub.length ? '<span class="t2 tiny">' + sub.join(' · ') + '</span>' : '') +
+      '</div>';
+  }
+  function devText(r) {
+    var d = devInfo(r), a = [];
+    if (d.kind) a.push(d.kind);
+    if (d.os) a.push(d.os);
+    if (d.code) a.push(d.code);
+    return a.length ? a.join(' · ') : '未知设备';
+  }
+
+  /* ───────── 网络 ───────── */
+  /* 技术错误统一翻译成人话 —— 管理台同样是给人看的界面，
+     `Failed to fetch`、`HTTP 502` 这类原文不能出现在提示里。
+     认不出的、不含中文的，一律走兜底句；原文只进 console。 */
+  function friendlyErr(e, fallback) {
+    var m = String((e && e.message) || e || '');
+    try { if (m && window.console) console.warn('[YMusic 管理台] 原始错误：', e); } catch (_) { }
+    if (/未登录|需要先登录|没有管理权限|只有开发者|不存在|过期/.test(m)) return m;
+    if (/Failed to fetch|NetworkError|Network request failed|Load failed|fetch failed|ERR_/i.test(m))
+      return '连不上服务器，检查下网络再试试';
+    if (/abort/i.test(m)) return '请求被取消了';
+    if (/timeout|timed out|超时|ETIMEDOUT/i.test(m)) return '网络有点慢，稍后再试';
+    if (/ECONNREFUSED|ENOTFOUND|ECONNRESET|getaddrinfo/i.test(m))
+      return '连不上服务器，检查下网络再试试';
+    if (/Cannot read|Cannot set|is not a function|is not defined/i.test(m))
+      return '出了点小问题，重试一下';
+    if (!/[\u4e00-\u9fa5]/.test(m)) return fallback || '出了点小问题，稍后再试';
+    return m;
+  }
+  function base() { return state.base || location.origin; }
+  function api(path, opt) {
+    opt = opt || {};
+    var url = base() + path;
+    var headers = { 'Accept': 'application/json' };
+    if (state.token) headers['Authorization'] = 'Bearer ' + state.token;
+    var body;
+    if (opt.body !== undefined) {
+      headers['Content-Type'] = 'application/json';
+      body = JSON.stringify(opt.body);
+    }
+    return fetch(url, { method: opt.method || (body ? 'POST' : 'GET'), headers: headers, body: body })
+      .then(function (r) {
+        return r.text().then(function (txt) {
+          var j;
+          try { j = JSON.parse(txt); }
+          catch (e) {
+            /* 服务端回了一段 HTML（隧道断了 / 网关 502 / 服务没起来）*/
+            j = { ok: false, error: r.status >= 500
+              ? '服务器开小差了，稍等一下再试'
+              : '服务器返回的内容看不懂，可能正在重启' };
+          }
+          if (r.status === 401) { j.__auth = true; }
+          if (!r.ok && j.ok === undefined) j.ok = false;
+          return j;
+        });
+      })
+      .catch(function (e) {
+        return { ok: false, error: friendlyErr(e, '连不上服务器，检查下网络再试试') };
+      });
+  }
+  function guard(j, silent) {
+    if (j && j.__auth) { kickOut('登录已过期，请重新登录'); return false; }
+    if (!j || !j.ok) {
+      if (j && j.error === '没有管理权限') {
+        modal({
+          title: '这个账号不是管理员',
+          desc: '你登录的账号没有管理权限。请用管理员或开发者账号登录。',
+          okText: '重新登录', onOk: function () { kickOut(); }
+        });
+      } else if (!silent) toast(friendlyErr((j && j.error) || '', '操作失败'), 'err');
+      return false;
+    }
+    return true;
+  }
+
+  /* ───────── 弹窗 ───────── */
+  function modal(o) {
+    var back = el('<div class="modal mask on" style="background:rgba(3,6,4,.6)"></div>');
+    var box = el(
+      '<div class="mbox">' +
+      '<div class="mh"><b>' + esc(o.title || '确认') + '</b>' +
+      (o.desc ? '<p>' + esc(o.desc) + '</p>' : '') + '</div>' +
+      '<div class="mb">' + (o.html || '') + '</div>' +
+      '<div class="mf">' +
+      (o.cancel === false ? '' : '<button class="btn gho" data-x="0">' + esc(o.cancelText || '取消') + '</button>') +
+      '<button class="btn ' + (o.danger ? 'dan' : 'pri') + '" data-x="1">' + esc(o.okText || '确定') + '</button>' +
+      '</div></div>');
+    back.appendChild(box);
+    $('#modals').appendChild(back);
+    function close() { back.remove(); }
+    back.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-x]');
+      if (b) {
+        var yes = b.getAttribute('data-x') === '1';
+        if (!yes) return close();
+        if (o.onOk) {
+          var r = o.onOk(box, close);
+          if (r === true) close();
+          return;
+        }
+        return close();
+      }
+      if (e.target === back && o.dismiss !== false) close();
+    });
+    setTimeout(function () { var f = box.querySelector('input,textarea'); if (f) f.focus(); }, 60);
+    return { box: box, close: close };
+  }
+
+  /* ───────── 侧栏 ───────── */
+  var NAV = [
+    { g: '运营' },
+    { v: 'overview', t: '概览', sub: '整体运行情况', ic: '<path d="M3 13h8V3H3zM13 21h8V11h-8zM3 21h8v-6H3zM13 7h8V3h-8z"/>' },
+    { v: 'users', t: '账号', sub: '用户、管理员与在线状态', ic: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>', cnt: 'userN' },
+    { v: 'audit', t: '音频审核', sub: '用户上传的音频', ic: '<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>', cnt: 'pendN', warn: true },
+    { v: 'avatars', t: '头像审核', sub: '用户换的头像要过这道', ic: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>', cnt: 'avatarN', warn: true },
+    { v: 'notice', t: '公告', sub: '向所有用户推送消息', ic: '<path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-4 0V9"/><path d="M8 7h8M8 11h8M8 15h5"/>', cnt: 'noticeN' },
+    { g: '系统' },
+    { v: 'service', t: '运行状态', sub: '版本、地址与发布记录', ic: '<rect x="2" y="3" width="20" height="7" rx="2"/><rect x="2" y="14" width="20" height="7" rx="2"/><path d="M6 6.5h.01M6 17.5h.01"/>' },
+    { v: 'vipguard', t: '会员凭证', sub: '三平台凭证巡检与扫码换证', ic: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/>' },
+    { v: 'settings', t: '设置', sub: '授权码、白名单与我的账号', ic: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.14.4.44.73.83.94H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>' }
+  ];
+  function renderNav() {
+    var html = '';
+    NAV.forEach(function (n) {
+      if (n.g) { html += '<div class="grp">' + esc(n.g) + '</div>'; return; }
+      var c = '';
+      if (n.cnt) c = '<span class="cnt' + (n.warn ? ' warn' : '') + '" id="nav_' + n.cnt + '" hidden></span>';
+      html += '<button class="nav" data-v="' + n.v + '">' +
+        '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" ' +
+        'stroke-linecap="round" stroke-linejoin="round">' + n.ic + '</svg>' +
+        '<span>' + esc(n.t) + '</span>' + c + '</button>';
+    });
+    $('#navWrap').innerHTML = html;
+    $('#navWrap').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-v]');
+      if (!b) return;
+      go(b.getAttribute('data-v'));
+      sideOpen(false);
+    });
+  }
+  function syncNavCnt() {
+    var c = state.counts || {};
+    var m = {
+      userN: c.users, pendN: c.pending, noticeN: c.notices, avatarN: c.avatarPending
+    };
+    Object.keys(m).forEach(function (k) {
+      var e = $('#nav_' + k);
+      if (!e) return;
+      var v = m[k];
+      if (v) { e.hidden = false; e.textContent = v > 999 ? '999+' : v; }
+      else e.hidden = true;
+    });
+  }
+  function sideOpen(on) {
+    $('#side').classList.toggle('on', !!on);
+    $('#burgerMask').classList.toggle('on', !!on);
+  }
+
+  /* ───────── 视图切换 ───────── */
+  function go(v) {
+    if (!VAR[v]) v = 'overview';
+    state.view = v;
+    /* 地址栏带上 #板块，方便收藏 / 分享 / 直接跳转。
+       已经带了子路径（如 #users/<uid>）就别覆盖，否则深链会被冲掉。 */
+    var cur = (location.hash || '').replace(/^#\/?/, '').split('/')[0];
+    if (cur !== v) { try { history.replaceState(null, '', '#' + v); } catch (e) { } }
+    $$('#navWrap .nav').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-v') === v); });
+    var meta = NAV.filter(function (n) { return n.v === v; })[0] || {};
+    $('#vTitle').textContent = meta.t || '管理台';
+    $('#vSub').textContent = meta.sub || '';
+    VAR[v] && VAR[v]();
+  }
+  function loading(html) {
+    $('#views').innerHTML = '<div class="view">' + html + '</div>';
+  }
+  function skelRows(n) {
+    var s = '';
+    for (var i = 0; i < (n || 5); i++) s += '<tr><td colspan="7" style="padding:14px 15px"><div class="sk" style="width:' + (45 + (i * 13) % 45) + '%"></div></td></tr>';
+    return s;
+  }
+  function emptyBox(title, desc, icon) {
+    return '<div class="empty">' +
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">' +
+      (icon || '<path d="M3 7h18v13H3z"/><path d="M3 7l2-3h14l2 3"/><path d="M9 12h6"/>') + '</svg>' +
+      '<b>' + esc(title) + '</b><span>' + esc(desc || '') + '</span></div>';
+  }
+
+  /* ═══════════ 概览 ═══════════ */
+  function vOverview() {
+    loading('<div class="kpis">' + new Array(6).join('<div class="kpi"><div class="sk" style="width:52%"></div><div class="sk" style="height:26px;margin-top:12px;width:38%"></div></div>') + '</div>' +
+      '<div class="grid2"><div class="card"><div class="sk" style="width:30%"></div></div><div class="card"><div class="sk" style="width:40%"></div></div></div>');
+    api('/api/admin/state').then(function (j) {
+      if (!guard(j)) return;
+      state.counts = j.counts || {};
+      state.service = j.service || null;
+      state.me = j.me || state.me;
+      renderWho(); syncNavCnt();
+      var c = j.counts || {}, s = j.service || {}, r = j.release || {};
+      var on = c.online | 0, hid = c.hidden | 0;
+      var html =
+        '<div class="kpis">' +
+        kpi('总账号', nfmt(c.users), '<span class="t2">其中管理员 ' + (c.admins | 0) + ' 人</span>', true) +
+        kpi('正在在线', nfmt(on), hid ? '<span class="t2">另有 ' + hid + ' 人隐身在线</span>' : '<span class="t2">隐身用户也算在内</span>') +
+        kpi('今日新增', nfmt(c.todayNew), '<span class="t2">今天注册的账号</span>') +
+        kpi('待审核音频', nfmt(c.pending), '<span class="t2">已通过 ' + (c.approved | 0) + ' · 已驳回 ' + (c.rejected | 0) + '</span>', (c.pending | 0) > 0) +
+        kpi('活跃会话', nfmt(c.sessions), '<span class="t2">未过期的登录令牌</span>') +
+        kpi('公告数', nfmt(c.notices), '<span class="t2">推送给全部用户</span>') +
+        '</div>' +
+
+        '<div class="grid2">' +
+        '<div class="card"><h3>今日活跃 Top 3</h3><p class="desc">按今天的累计在线时长排名</p><div id="rankBox"></div></div>' +
+        '<div class="card"><h3>服务信息</h3><p class="desc">主服务实时状态</p>' +
+        '<dl class="kv">' +
+        kv('应用版本', 'v' + esc(s.app || '—')) +
+        kv('前端版本', 'v' + esc(s.web || '—')) +
+        kv('运行时长', esc(fmtUp(s.uptimeMin))) +
+        kv('公网地址', s.publicBase ? '<a href="' + esc(s.publicBase) + '" target="_blank" rel="noopener">' + esc(s.publicBase.replace(/^https?:\/\//, '')) + '</a>' : '<span class="t2">未配置</span>') +
+        kv('监听端口', String(s.port || '—')) +
+        kv('运行方式', s.sea ? '单文件 EXE' : '脚本 / 服务端') +
+        kv('内存占用', (s.memMb || 0) + ' MB') +
+        kv('Node', esc(s.node || '—')) +
+        '</dl></div>' +
+        '</div>' +
+
+        '<div class="grid2" style="margin-top:16px">' +
+        '<div class="card"><h3>发布记录</h3><p class="desc">最近一次前端发布</p>' +
+        '<dl class="kv">' +
+        kv('发布时间', esc(date(r.webAt))) +
+        kv('说明', esc(r.webNote || '—')) +
+        kv('前端文件', (r.webFiles && r.webFiles.length) ? esc(r.webFiles.join('、')) : '—') +
+        kv('安卓包', r.apk ? ('v' + esc(r.apk.versionName) + '（Code ' + r.apk.versionCode + '，' + size(r.apk.size) + '）') : '<span class="t2">未发布</span>') +
+        '</dl></div>' +
+        '<div class="card"><h3>快捷操作</h3><p class="desc">常用入口</p>' +
+        '<div style="display:flex;gap:9px;flex-wrap:wrap">' +
+        '<button class="btn" data-go="users">查看账号</button>' +
+        '<button class="btn" data-go="audit">去审核' + ((c.pending | 0) ? '（' + c.pending + '）' : '') + '</button>' +
+        '<button class="btn" data-go="notice">发公告</button>' +
+        '<button class="btn gho" id="copyBase">复制邀请链接</button>' +
+        '</div>' +
+        '<p class="desc" style="margin:16px 0 0">把公网地址发给朋友，他们打开就能注册使用。</p>' +
+        '</div></div>';
+
+      $('#views').innerHTML = '<div class="view">' + html + '</div>';
+
+      var rb = $('#rankBox');
+      if (j.top && j.top.length) {
+        rb.innerHTML = j.top.map(function (t, i) {
+          return '<div class="rank"><div class="no">' + (i + 1) + '</div>' +
+            avatar(t.uid, t.username, 30) +
+            '<div class="tx"><b>' + esc(t.username || '听众') + '</b><i>' + esc(short(t.uid)) + '</i></div>' +
+            '<div class="vv">' + esc(dur(t.ms)) + '</div></div>';
+        }).join('');
+      } else rb.innerHTML = '<div class="t2 tiny" style="padding:8px 0">今天还没有活跃记录</div>';
+
+      /* 用 onclick（会覆盖）而不是 addEventListener —— 每次重渲染都挂一个会累积泄漏 */
+      $('#views').onclick = function (e) {
+        var b = e.target.closest('[data-go]');
+        if (b) return go(b.getAttribute('data-go'));
+      };
+      var cb = $('#copyBase');
+      if (cb) cb.addEventListener('click', function () {
+        var u = (s.publicBase || '').replace(/\/+$/, '');
+        if (!u) return toast('服务端还没配置公网地址', 'warn');
+        copy(u).then(function () { toast('已复制：' + u); });
+      });
+    });
+  }
+  function kpi(label, num, foot, hl) {
+    return '<div class="kpi' + (hl ? ' hl' : '') + '"><div class="lb">' + esc(label) + '</div>' +
+      '<div class="nm">' + esc(num) + '</div><div class="ft">' + foot + '</div></div>';
+  }
+  function kv(k, v) { return '<dt>' + esc(k) + '</dt><dd>' + v + '</dd>'; }
+  function short(uid) { return String(uid || '').slice(0, 10); }
+  function fmtUp(m) {
+    m = m | 0;
+    if (m < 60) return m + ' 分钟';
+    if (m < 1440) return Math.floor(m / 60) + ' 小时 ' + (m % 60) + ' 分';
+    return Math.floor(m / 1440) + ' 天 ' + Math.floor((m % 1440) / 60) + ' 小时';
+  }
+  function copy(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(text);
+    return new Promise(function (ok, no) {
+      try {
+        var t = document.createElement('textarea');
+        t.value = text; t.style.position = 'fixed'; t.style.opacity = '0';
+        document.body.appendChild(t); t.select(); document.execCommand('copy'); t.remove(); ok();
+      } catch (e) { no(e); }
+    });
+  }
+
+  /* ═══════════ 账号 ═══════════ */
+  var uFilter = 'all', uQuery = '';
+  function vUsers() {
+    loading('<div class="tools"><div class="search"><input class="inp" placeholder="搜索昵称 / 手机 / 邮箱 / UID"></div></div>' +
+      '<div class="tw"><table><tbody>' + skelRows(6) + '</tbody></table></div>');
+    var box = $('#views');
+    box.innerHTML = '<div class="view">' +
+      '<div class="tools">' +
+      '<div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/></svg>' +
+      '<input class="inp" id="uQ" placeholder="搜索昵称 / 手机 / 邮箱 / UID" value="' + esc(uQuery) + '"></div>' +
+      '<div class="chips" id="uChips">' +
+      chip('all', '全部', 'uAll') + chip('online', '只看在线', 'uOn') + chip('admin', '管理员', 'uAdm') +
+      '<button class="btn sm gho" id="uReload" style="margin-left:auto"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12a9 9 0 0 1 15.5-6.2M21 12a9 9 0 0 1-15.5 6.2"/><path d="M18 3v5h-5M6 21v-5h5"/></svg>刷新</button>' +
+      '</div></div>' +
+      '<div class="tw" id="uWrap"><table><thead><tr>' +
+      '<th>账号</th><th>登录方式</th><th>身份</th><th>状态</th><th>设备</th><th>今日在线</th><th>最后登录</th><th></th>' +
+      '</tr></thead><tbody id="uRows">' + skelRows(6) + '</tbody></table></div></div>';
+
+    var t = null;
+    $('#uQ').addEventListener('input', function (e) {
+      uQuery = e.target.value;
+      clearTimeout(t); t = setTimeout(loadUsers, 260);
+    });
+    $('#uChips').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-f]');
+      if (!b) return;
+      uFilter = b.getAttribute('data-f');
+      $$('#uChips .chip').forEach(function (x) { x.classList.toggle('on', x === b); });
+      renderUserRows();
+    });
+    $('#uReload').addEventListener('click', function () { loadUsers(true); });
+    $$('#uChips .chip').forEach(function (x) { x.classList.toggle('on', x.getAttribute('data-f') === uFilter); });
+    loadUsers();
+  }
+  function chip(f, t, id) {
+    return '<button class="chip" data-f="' + f + '" id="' + id + '">' + esc(t) + '</button>';
+  }
+  var uRows0 = [];
+  function loadUsers() {
+    var tb = $('#uRows');
+    if (tb) tb.innerHTML = skelRows(6);
+    api('/api/admin/users?q=' + encodeURIComponent(uQuery)).then(function (j) {
+      if (!guard(j)) return;
+      uRows0 = j.rows || [];
+      /* 服务端已经按关键词过滤过了，这里只记总数（搜索态不改总数） */
+      if (!uQuery) { state.counts.users = j.total; syncNavCnt(); }
+      renderUserRows();
+      /* 深链 #users/<uid> 直接拉出某个账号的详情，方便把链接发给别人 */
+      var m = (location.hash || '').match(/^#?users\/([\w-]+)/);
+      if (m) openUser(m[1]);
+    });
+  }
+  function renderUserRows(rows) {
+    rows = rows || uRows0 || [];
+    var list = rows.filter(function (r) {
+      if (uFilter === 'online') return !!r.online;
+      if (uFilter === 'admin') return r.role === 'admin' || r.role === 'superadmin';
+      return true;
+    });
+    var tb = $('#uRows');
+    if (!tb) return;
+    var b1 = $('#uAll'), b2 = $('#uOn'), b3 = $('#uAdm');
+    if (b1) b1.innerHTML = '全部 <b>' + rows.length + '</b>';
+    if (b2) b2.innerHTML = '只看在线 <b>' + rows.filter(function (r) { return r.online; }).length + '</b>';
+    if (b3) b3.innerHTML = '管理员 <b>' + rows.filter(function (r) { return r.role !== 'user'; }).length + '</b>';
+
+    if (!list.length) {
+      tb.innerHTML = '<tr><td colspan="8">' + emptyBox(uQuery ? '没搜到匹配的账号' : '这里还没有账号',
+        uQuery ? '换个关键词试试' : '等有人注册后就会出现在这里') + '</td></tr>';
+      return;
+    }
+    tb.innerHTML = list.map(function (r) {
+      var st = r.online
+        ? '<span style="display:inline-flex;align-items:center;gap:7px"><i class="dot ' + (r.hidden ? 'hid' : 'on') + '"></i>' +
+          (r.hidden ? '隐身在线' : '在线') + (r.song ? ' <span class="t2 tiny">· ' + esc(trunc(r.song, 14)) + '</span>' : '') + '</span>'
+        : '<span class="t2" style="display:inline-flex;align-items:center;gap:7px"><i class="dot"></i>' + (r.lastSeen ? ago(r.lastSeen) : '从未上线') + '</span>';
+      var ways = [];
+      if (r.phone) ways.push('<span class="t2 tiny">手机</span> ' + esc(mask(r.phone)));
+      if (r.email) ways.push('<span class="t2 tiny">邮箱</span> ' + esc(mask(r.email)));
+      if (!ways.length) ways.push('<span class="t2">—</span>');
+      return '<tr class="clk" data-uid="' + esc(r.uid) + '">' +
+        '<td data-l="账号"><div class="cell-u">' + avatar(r.uid, r.username, 32, avUrl(r.avatar)) +
+        '<div class="tx"><b>' + esc(r.username || '听众') + '</b><i>' + esc(short(r.uid)) + '</i></div></div></td>' +
+        '<td data-l="登录方式"><div style="display:flex;flex-direction:column;gap:2px;align-items:flex-end">' +
+        ways.join('<br>') + '</div></td>' +
+        '<td data-l="身份">' + roleBadge(r.role) + '</td>' +
+        '<td data-l="状态">' + st + '</td>' +
+        '<td data-l="设备">' + devCell(r) + '</td>' +
+        '<td data-l="今日在线" class="num">' + esc(dur(r.todayMs)) + '</td>' +
+        '<td data-l="最后登录" class="t2 nowrap">' + esc(ago(r.lastLogin)) + '</td>' +
+        '<td class="cell-act" style="text-align:right"><div class="acts">' +
+        '<button class="btn sm gho" data-open="' + esc(r.uid) + '">管理</button></div></td>' +
+        '</tr>';
+    }).join('');
+    tb.onclick = function (e) {
+      var tr = e.target.closest('[data-uid]');
+      if (!tr) return;
+      openUser(tr.getAttribute('data-uid'));
+    };
+  }
+  function trunc(s, n) { s = String(s || ''); return s.length > n ? s.slice(0, n - 1) + '…' : s; }
+  function mask(s) {
+    s = String(s || '');
+    if (/^1\d{10}$/.test(s)) return s.slice(0, 3) + '****' + s.slice(7);
+    var i = s.indexOf('@');
+    if (i > 1) return s.slice(0, 2) + '***' + s.slice(i);
+    return s;
+  }
+
+  /* ── 账号详情抽屉 ── */
+  function drawer(html) {
+    var d = $('#drawer');
+    d.innerHTML = html;
+    d.classList.add('on');
+    $('#mask').classList.add('on');
+  }
+  function closeDrawer() {
+    $('#drawer').classList.remove('on');
+    $('#mask').classList.remove('on');
+  }
+  function openUser(uid) {
+    drawer('<div class="dh"><div class="av" style="width:38px;height:38px;background:var(--bg3)"></div>' +
+      '<div class="tx"><b>加载中…</b><i>' + esc(short(uid)) + '</i></div>' +
+      '<button class="x" id="dwX">✕</button></div><div class="db"><div class="sk" style="width:60%"></div>' +
+      '<div class="sk" style="width:80%;margin-top:11px"></div><div class="sk" style="width:45%;margin-top:11px"></div></div>');
+    $('#dwX').onclick = closeDrawer;
+    api('/api/admin/user?uid=' + encodeURIComponent(uid)).then(function (j) {
+      if (!guard(j)) return closeDrawer();
+      var u = j.user;
+      var isSuper = u.role === 'superadmin';
+      var iAmSuper = state.me && state.me.role === 'superadmin';
+      var feet = [];
+      if (!isSuper) {
+        feet.push(u.role === 'admin'
+          ? '<button class="btn" data-act="demote">撤销管理员</button>'
+          : '<button class="btn" data-act="promote">设为管理员</button>');
+        feet.push('<button class="btn dan" data-act="del">注销账号</button>');
+      }
+      if (iAmSuper && !isSuper) feet.push('<button class="btn gho" data-act="transfer" style="margin-left:auto">转让开发者身份</button>');
+
+      var st = u.online
+        ? '<span style="display:inline-flex;align-items:center;gap:7px"><i class="dot ' + (u.hidden ? 'hid' : 'on') + '"></i>' +
+          (u.hidden ? '隐身在线' : '在线') + (u.song ? ' · ' + esc(u.song) : '') + '</span>'
+        : '<span class="t2">' + (u.lastSeen ? '最后活跃 ' + esc(ago(u.lastSeen)) : '从未上线') + '</span>';
+
+      drawer(
+        '<div class="dh">' + avatar(u.uid, u.username, 38, avUrl(u.avatar)) +
+        '<div class="tx"><b>' + esc(u.username || '听众') + '</b><i>' + esc(short(u.uid)) + ' · ' + esc(u.device || '未知设备') + '</i></div>' +
+        '<button class="x" id="dwX">✕</button></div>' +
+        '<div class="db">' +
+        '<div class="dsec"><h4>基本信息</h4><dl class="kv">' +
+        kv('身份', roleBadge(u.role)) +
+        kv('状态', st) +
+        kv('手机号', u.phone ? esc(u.phone) : '<span class="t2">未绑定</span>') +
+        kv('邮箱', u.email ? esc(u.email) : '<span class="t2">未绑定</span>') +
+        kv('密码', u.hasPass ? '已设置' : '<span class="t2">未设置</span>') +
+        kv('注册时间', esc(date(u.createdAt))) +
+        kv('最后登录', esc(date(u.lastLogin))) +
+        kv('今日在线', esc(dur(u.todayMs))) +
+        kv('累计在线', esc(dur(u.totalMs))) +
+        kv('设备', esc(devText(u))) +
+        kv('最近设备', esc(u.lastDevice || '—')) +
+        kv('最近 IP', '<span class="mono">' + esc(u.lastIp || '—') + '</span>') +
+        '</dl></div>' +
+        '<div class="dsec"><h4>收藏（' + (j.favs || []).length + '）</h4>' + miniList(j.favs, '还没有收藏的歌') + '</div>' +
+        '<div class="dsec"><h4>最近播放（' + (j.history || []).length + '）</h4>' + miniList(j.history, '还没有播放记录') + '</div>' +
+        '<div class="dsec"><h4>上传的音频（' + (j.uploads || []).length + '）</h4>' + miniList(j.uploads, '还没有上传过音频') + '</div>' +
+        '<div class="dsec"><h4>登录设备（' + (j.sessions || []).length + '）</h4>' +
+        ((j.sessions || []).length
+          ? '<div class="mini">' + j.sessions.map(function (s) {
+            return '<div class="it"><span class="idx">·</span><span class="nm mono">' + esc(s.token) + '</span>' +
+              '<span class="ar">' + (s.alive ? '<span class="badge ok">有效</span>' : '<span class="badge no">已过期</span>') + '</span></div>';
+          }).join('') + '</div>'
+          : '<div class="t2 tiny">没有任何登录令牌</div>') +
+        '</div>' +
+        '</div>' +
+        (feet.length ? '<div class="df">' + feet.join('') + '</div>' : '') +
+        ''
+      );
+      $('#dwX').onclick = closeDrawer;
+      var df = $('#drawer .df');
+      if (df) df.onclick = function (e) {
+        var b = e.target.closest('[data-act]');
+        if (!b) return;
+        var act = b.getAttribute('data-act');
+        if (act === 'promote' || act === 'demote') {
+          api('/api/admin/user/role', { body: { uid: u.uid, role: act === 'promote' ? 'admin' : 'user' } })
+            .then(function (r) {
+              if (!guard(r)) return;
+              toast(act === 'promote' ? '已设为管理员' : '已撤销管理员');
+              closeDrawer(); loadUsers(true);
+            });
+        } else if (act === 'del') {
+          modal({
+            title: '注销这个账号？', danger: true, okText: '确认注销',
+            desc: '会一起删掉 TA 的好友、动态、上传的音频和登录状态，无法恢复。',
+            onOk: function (box, close) {
+              api('/api/admin/user/del', { body: { uid: u.uid } }).then(function (r) {
+                if (!guard(r)) return;
+                /* 自己亲手注销的不再弹一次实时通知 —— 已经有 toast 了，再弹是噪音 */
+                if (RT_SEEN) delete RT_SEEN[u.uid];
+                toast('已注销 ' + (u.username || ''));
+                close(); closeDrawer(); loadUsers(true);
+              });
+            }
+          });
+        } else if (act === 'transfer') {
+          modal({
+            title: '把开发者身份转让给 TA？', danger: true, okText: '确认转让',
+            desc: '转让后你自己会变成普通管理员，TA 成为唯一开发者。这个操作不可撤销。',
+            onOk: function (box, close) {
+              api('/api/admin/transfer', { body: { uid: u.uid } }).then(function (r) {
+                if (!guard(r)) return;
+                toast('已转让给 ' + (u.username || ''));
+                close(); closeDrawer();
+                setTimeout(function () { kickOut('权限已转让，请重新登录'); }, 900);
+              });
+            }
+          });
+        }
+      };
+    });
+  }
+  function miniList(arr, emptyText) {
+    if (!arr || !arr.length) return '<div class="t2 tiny">' + esc(emptyText) + '</div>';
+    return '<div class="mini">' + arr.slice(0, 40).map(function (x, i) {
+      return '<div class="it"><span class="idx">' + (i + 1) + '</span>' +
+        '<span class="nm">' + esc(x.name || '（未命名）') + '</span>' +
+        '<span class="ar">' + esc(x.artist || '') + '</span></div>';
+    }).join('') + (arr.length > 40 ? '<div class="t2 tiny" style="padding:8px 11px">还有 ' + (arr.length - 40) + ' 条未显示</div>' : '') + '</div>';
+  }
+
+  /* ═══════════ 审核 ═══════════ */
+  var aState = 'pending', aRows = [];
+  function vAudit() {
+    $('#views').innerHTML = '<div class="view">' +
+      '<div class="sec-h"><div><h2>音频审核</h2><p>用户上传的音频要经过这里才会公开</p></div></div>' +
+      '<div class="chips" id="aChips" style="margin-bottom:15px">' +
+      '<button class="chip" data-s="pending">待审核</button>' +
+      '<button class="chip" data-s="approved">已通过</button>' +
+      '<button class="chip" data-s="rejected">已驳回</button>' +
+      '<button class="chip" data-s="">全部</button></div>' +
+      '<div class="audit-list" id="aList"></div></div>';
+    $('#aChips').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-s]');
+      if (!b) return;
+      aState = b.getAttribute('data-s');
+      paintAuditChips(); loadAudit();
+    });
+    paintAuditChips(); loadAudit();
+  }
+  function paintAuditChips() {
+    $$('#aChips .chip').forEach(function (x) { x.classList.toggle('on', x.getAttribute('data-s') === aState); });
+  }
+  function loadAudit() {
+    $('#aList').innerHTML = '<div class="card"><div class="sk" style="width:42%"></div><div class="sk" style="width:66%;margin-top:11px"></div></div>';
+    api('/api/admin/uploads?state=' + encodeURIComponent(aState)).then(function (j) {
+      if (!guard(j)) return;
+      aRows = j.list || [];
+      paint();
+    });
+  }
+  function paint() {
+    var box = $('#aList');
+    if (!aRows.length) {
+      box.innerHTML = '<div class="tw">' + emptyBox(
+        aState === 'pending' ? '没有待审核的音频' : '这里还是空的',
+        aState === 'pending' ? '用户上传后会自动出现在这里' : '换个状态看看',
+        '<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>') + '</div>';
+      return;
+    }
+    box.innerHTML = aRows.map(function (t) {
+      var badge = t.state === 'approved' ? '<span class="badge ok">已通过</span>'
+        : t.state === 'rejected' ? '<span class="badge no">已驳回</span>'
+          : '<span class="badge pend">待审核</span>';
+      var ops = '';
+      if (t.state !== 'approved') ops += '<button class="btn sm" data-op="pass" data-id="' + esc(t.id) + '">通过</button>';
+      if (t.state !== 'rejected') ops += '<button class="btn sm dan" data-op="reject" data-id="' + esc(t.id) + '">驳回</button>';
+      ops += '<button class="btn sm gho" data-op="del" data-id="' + esc(t.id) + '">删除</button>';
+      return '<div class="aud">' +
+        '<div class="meta"><b>' + esc(t.name || t.title || '（未命名）') + ' ' + badge + '</b>' +
+        '<div class="sub"><span>' + esc(t.artist || t.singer || '未知歌手') + '</span>' +
+        '<span>上传者 ' + esc(t.uploader || '—') + '</span>' +
+        '<span>' + esc(ago(t.at)) + '</span>' +
+        (t.size ? '<span>' + size(t.size) + '</span>' : '') +
+        (t.reason ? '<span style="color:var(--danger)">理由：' + esc(t.reason) + '</span>' : '') +
+        '</div></div>' +
+        '<audio controls preload="none" src="' + esc(base()) + '/api/admin/uploads/file?id=' + encodeURIComponent(t.id) +
+        (state.token ? '&token=' + encodeURIComponent(state.token) : '') + '"></audio>' +
+        '<div class="ops">' + ops + '</div></div>';
+    }).join('');
+    box.onclick = function (e) {
+      var b = e.target.closest('[data-op]');
+      if (!b) return;
+      var id = b.getAttribute('data-id'), op = b.getAttribute('data-op');
+      if (op === 'pass') return doReview(id, true);
+      if (op === 'reject') {
+        return modal({
+          title: '驳回这首音频', okText: '确认驳回', danger: true,
+          html: '<label class="fld"><span>驳回理由（会告诉上传者）</span>' +
+            '<input class="inp" id="rjReason" placeholder="比如：音质太差 / 不是音乐文件"></label>',
+          onOk: function (box2, close) {
+            var r = (box2.querySelector('#rjReason').value || '').trim();
+            doReview(id, false, r); close();
+          }
+        });
+      }
+      if (op === 'del') {
+        return modal({
+          title: '彻底删除这首音频？', danger: true, okText: '删除',
+          desc: '文件和记录都会一起删掉，无法恢复。',
+          onOk: function (box2, close) {
+            api('/api/admin/uploads/delete', { body: { id: id } }).then(function (j) {
+              if (!guard(j)) return;
+              toast('已删除'); close(); loadAudit();
+            });
+          }
+        });
+      }
+    };
+  }
+  function doReview(id, pass, reason) {
+    api('/api/admin/uploads/review', { body: { id: id, pass: pass ? '1' : '0', reason: reason || '' } }).then(function (j) {
+      if (!guard(j)) return;
+      toast(pass ? '已通过' : '已驳回');
+      loadAudit();
+      api('/api/admin/state').then(function (s) { if (s && s.ok) { state.counts = s.counts; syncNavCnt(); } });
+    });
+  }
+
+  /* ═══════════ 头像审核 ═══════════ */
+  var avState = 'pending', avRows = [];
+  function vAvatars() {
+    $('#views').innerHTML = '<div class="view">' +
+      '<div class="sec-h"><div><h2>头像审核</h2><p>换过的头像通过之后才对外生效；没过审之前，别人看到的还是原来那张</p></div></div>' +
+      '<div class="chips" id="avChips" style="margin-bottom:15px">' +
+      '<button class="chip" data-s="pending">待审核</button>' +
+      '<button class="chip" data-s="approved">已通过</button>' +
+      '<button class="chip" data-s="rejected">已驳回</button>' +
+      '<button class="chip" data-s="">全部</button></div>' +
+      '<div class="audit-list" id="avList"></div></div>';
+    $('#avChips').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-s]');
+      if (!b) return;
+      avState = b.getAttribute('data-s');
+      paintAvChips(); loadAvatars();
+    });
+    paintAvChips(); loadAvatars();
+  }
+  function paintAvChips() {
+    $$('#avChips .chip').forEach(function (x) { x.classList.toggle('on', x.getAttribute('data-s') === avState); });
+  }
+  function loadAvatars() {
+    $('#avList').innerHTML = '<div class="card"><div class="sk" style="width:42%"></div><div class="sk" style="width:66%;margin-top:11px"></div></div>';
+    api('/api/admin/avatars?state=' + encodeURIComponent(avState)).then(function (j) {
+      if (!guard(j)) return;
+      avRows = j.list || [];
+      paintAvatars();
+    });
+  }
+  /* 待审核的图走 /api/admin/avatars/file（管理端专用，不看审核状态），
+     <img> 不带 Authorization 头，所以跟音频审核一样把 token 拼在 query 上。 */
+  function avImgSrc(id) {
+    return base() + '/api/admin/avatars/file?id=' + encodeURIComponent(id) +
+      (state.token ? '&token=' + encodeURIComponent(state.token) : '');
+  }
+  function paintAvatars() {
+    var box = $('#avList');
+    if (!avRows.length) {
+      box.innerHTML = '<div class="tw">' + emptyBox(
+        avState === 'pending' ? '没有待审核的头像' : '这里还是空的',
+        avState === 'pending' ? '用户换头像后会自动出现在这里' : '换个状态看看',
+        '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>') + '</div>';
+      return;
+    }
+    box.innerHTML = avRows.map(function (t) {
+      var badge = t.state === 'approved' ? '<span class="badge ok">已通过</span>'
+        : t.state === 'rejected' ? '<span class="badge no">已驳回</span>'
+          : '<span class="badge pend">待审核</span>';
+      /* 开发者自己换的头像走免审直通，队列里那条 reviewBy='self'。
+         翻记录时得能一眼分清「管理员审的」和「本人直接换的」。 */
+      if (t.reviewBy === 'self') badge += ' <span class="badge user">本人直通</span>';
+      var ops = '';
+      if (t.state !== 'approved') ops += '<button class="btn sm" data-op="pass" data-id="' + esc(t.id) + '">通过</button>';
+      if (t.state !== 'rejected') ops += '<button class="btn sm dan" data-op="reject" data-id="' + esc(t.id) + '">驳回</button>';
+      /* 待审时把"新图 / 现在这张"并排摆出来：通过之后会变成什么样，一眼看得到 */
+      var cur = t.current
+        ? '<div style="text-align:center"><div class="t2 tiny" style="margin-bottom:4px">现在用的</div>' +
+          '<img src="' + esc(base() + t.current) + '" style="width:40px;height:40px;border-radius:50%;' +
+          'object-fit:cover;background:#16211b;display:block"></div>'
+        : '<div style="text-align:center"><div class="t2 tiny" style="margin-bottom:4px">现在用的</div>' +
+          '<div style="width:40px;height:40px;border-radius:50%;background:#16211b;display:flex;' +
+          'align-items:center;justify-content:center;color:#5d7268;font-size:12px">无</div></div>';
+      return '<div class="aud">' +
+        '<div style="display:flex;align-items:center;gap:12px;flex:none">' +
+        '<div style="text-align:center"><div class="t2 tiny" style="margin-bottom:4px">' +
+        (t.state === 'pending' ? '申请换成' : '这张图') + '</div>' +
+        '<img src="' + esc(avImgSrc(t.id)) + '" style="width:64px;height:64px;border-radius:50%;' +
+        'object-fit:cover;background:#16211b;display:block"></div>' + cur + '</div>' +
+        '<div class="meta"><b>' + esc(t.uploader || '—') + ' ' + badge + '</b>' +
+        '<div class="sub"><span>' + esc(short(t.uid)) + '</span>' +
+        '<span>' + esc(ago(t.at)) + '</span>' +
+        (t.size ? '<span>' + size(t.size) + '</span>' : '') +
+        (t.reason ? '<span style="color:var(--danger)">理由：' + esc(t.reason) + '</span>' : '') +
+        '</div></div>' +
+        '<div class="ops">' + ops + '</div></div>';
+    }).join('');
+    box.onclick = function (e) {
+      var b = e.target.closest('[data-op]');
+      if (!b) return;
+      var id = b.getAttribute('data-id'), op = b.getAttribute('data-op');
+      if (op === 'pass') return doAvatarReview(id, true);
+      if (op === 'reject') {
+        return modal({
+          title: '驳回这张头像', okText: '确认驳回', danger: true,
+          html: '<label class="fld"><span>驳回理由（会告诉本人）</span>' +
+            '<input class="inp" id="avReason" placeholder="比如：图片不清晰 / 含二维码或广告"></label>',
+          onOk: function (box2, close) {
+            var r = (box2.querySelector('#avReason').value || '').trim();
+            doAvatarReview(id, false, r); close();
+          }
+        });
+      }
+    };
+  }
+  function doAvatarReview(id, pass, reason) {
+    api('/api/admin/avatars/review', { body: { id: id, pass: pass ? '1' : '0', reason: reason || '' } }).then(function (j) {
+      if (!guard(j)) return;
+      toast(pass ? '已通过，TA 的头像换成了这张' : '已驳回');
+      loadAvatars();
+      api('/api/admin/state').then(function (s) { if (s && s.ok) { state.counts = s.counts; syncNavCnt(); } });
+    });
+  }
+
+  /* ═══════════ 公告 ═══════════ */
+  function vNotice() {
+    loading('');
+    $('#views').innerHTML = '<div class="view">' +
+      '<div class="grid2">' +
+      '<div class="card"><h3>发布公告</h3><p class="desc">发出去后所有用户的铃铛都会亮</p>' +
+      '<label class="fld"><span>标题</span><input class="inp" id="nTitle" maxlength="80" placeholder="比如：新版上线了"></label>' +
+      '<label class="fld" style="margin-top:13px"><span>正文（可留空）</span>' +
+      '<textarea class="inp" id="nBody" placeholder="想说的话"></textarea></label>' +
+      '<label class="fld" style="margin-top:13px"><span>要点（一行一条，最多 12 条）</span>' +
+      '<textarea class="inp" id="nPoints" style="min-height:80px" placeholder="支持在 App 里直接更新&#10;新增了消息中心"></textarea></label>' +
+      '<label style="display:flex;align-items:center;gap:9px;margin-top:14px;font-size:13px;color:var(--t1)">' +
+      '<input type="checkbox" id="nTop" style="width:16px;height:16px;accent-color:#24C97C">置顶这条公告</label>' +
+      '<button class="btn pri blk" id="nSend" style="margin-top:16px;height:40px">推送给所有用户</button>' +
+      '</div>' +
+      '<div class="card"><h3>已发布</h3><p class="desc" id="nCount">—</p><div id="nList"></div></div>' +
+      '</div></div>';
+    $('#nSend').addEventListener('click', function () {
+      var t = ($('#nTitle').value || '').trim();
+      if (!t) return toast('标题不能为空', 'warn');
+      var btn = $('#nSend');
+      btn.disabled = true; btn.innerHTML = '<i class="ld"></i>发送中';
+      api('/api/admin/notice/post', {
+        body: {
+          title: t,
+          body: ($('#nBody').value || '').trim(),
+          points: ($('#nPoints').value || ''),
+          top: $('#nTop').checked
+        }
+      }).then(function (j) {
+        btn.disabled = false; btn.textContent = '推送给所有用户';
+        if (!guard(j)) return;
+        toast('公告已发出');
+        $('#nTitle').value = ''; $('#nBody').value = ''; $('#nPoints').value = ''; $('#nTop').checked = false;
+        loadNotices();
+      });
+    });
+    loadNotices();
+  }
+  function loadNotices() {
+    $('#nList').innerHTML = '<div class="sk" style="width:70%"></div><div class="sk" style="width:50%;margin-top:11px"></div>';
+    api('/api/admin/notice').then(function (j) {
+      if (!guard(j)) return;
+      var list = j.list || [];
+      $('#nCount').textContent = '共 ' + list.length + ' 条';
+      state.counts.notices = list.length; syncNavCnt();
+      if (!list.length) { $('#nList').innerHTML = '<div class="t2 tiny">还没发过公告</div>'; return; }
+      $('#nList').innerHTML = '<div class="mini">' + list.slice(0, 60).map(function (n) {
+        return '<div class="it" style="align-items:flex-start;flex-direction:column;gap:4px;padding:11px">' +
+          '<div style="display:flex;width:100%;gap:9px;align-items:baseline">' +
+          (n.top ? '<span class="badge ok">置顶</span>' : '') +
+          '<b style="font-weight:500;flex:1;min-width:0">' + esc(n.title) + '</b>' +
+          '<button class="btn sm dan" data-del="' + esc(n.id) + '">删除</button></div>' +
+          '<div class="t2 tiny" style="display:flex;gap:11px">' +
+          '<span>' + esc(date(n.at)) + '</span><span>' + esc(n.byName || '') + '</span></div>' +
+          (n.body ? '<div class="t2 tiny" style="line-height:1.6">' + esc(trunc(n.body, 90)) + '</div>' : '') +
+          '</div>';
+      }).join('') + '</div>';
+      $('#nList').onclick = function (e) {
+        var b = e.target.closest('[data-del]');
+        if (!b) return;
+        var id = b.getAttribute('data-del');
+        modal({
+          title: '删除这条公告？', danger: true, okText: '删除',
+          desc: '用户的铃铛里也会一起消失。',
+          onOk: function (box, close) {
+            api('/api/admin/notice/delete', { body: { id: id } }).then(function (j2) {
+              if (!guard(j2)) return;
+              toast('已删除'); close(); loadNotices();
+            });
+          }
+        });
+      };
+    });
+  }
+
+  /* ═══════════ 运行状态 ═══════════ */
+  function vService() {
+    loading('<div class="card"><div class="sk" style="width:34%"></div><div class="sk" style="width:60%;margin-top:12px"></div></div>');
+    api('/api/admin/state').then(function (j) {
+      if (!guard(j)) return;
+      var s = j.service || {}, r = j.release || {}, c = j.counts || {};
+      state.service = s; state.counts = c; syncNavCnt();
+      $('#views').innerHTML = '<div class="view">' +
+        '<div class="sec-h"><div><h2>运行状态</h2><p>主服务与发布情况一览</p></div>' +
+        '<button class="btn sm gho" id="svRe">刷新</button></div>' +
+        '<div class="grid2"><div class="card"><h3>主服务</h3><p class="desc">当前正在对外提供服务的实例</p><dl class="kv">' +
+        kv('应用版本', 'v' + esc(s.app || '—')) +
+        kv('前端版本', 'v' + esc(s.web || '—')) +
+        kv('公网地址', s.publicBase ? '<a href="' + esc(s.publicBase) + '" target="_blank" rel="noopener">' + esc(s.publicBase) + '</a>' : '<span class="t2">未配置</span>') +
+        kv('局域网', '<span class="mono">' + esc((s.dir || '') ? '' : '') + '</span>' + '见手机 App 首页') +
+        kv('监听端口', String(s.port || '—')) +
+        kv('运行方式', s.sea ? '单文件 EXE' : '脚本 / 服务端') +
+        kv('启动时间', esc(date((s.now || 0) - (s.uptimeMin || 0) * 60000))) +
+        kv('已运行', esc(fmtUp(s.uptimeMin))) +
+        kv('内存占用', (s.memMb || 0) + ' MB') +
+        kv('主机名', esc(s.host || '—')) +
+        kv('系统', esc(s.platform || '—')) +
+        kv('Node', esc(s.node || '—')) +
+        '</dl></div>' +
+        '<div class="card"><h3>发布记录</h3><p class="desc">前端热更新（用户不用重装）</p><dl class="kv">' +
+        kv('发布时间', esc(date(r.webAt))) +
+        kv('说明', esc(r.webNote || '—')) +
+        kv('文件', (r.webFiles || []).length ? esc(r.webFiles.join('、')) : '—') +
+        kv('安卓包', r.apk ? ('v' + esc(r.apk.versionName) + ' / Code ' + r.apk.versionCode) : '<span class="t2">未发布</span>') +
+        kv('包大小', r.apk ? size(r.apk.size) : '—') +
+        kv('发布时间', r.apk ? esc(date(r.apk.at)) : '—') +
+        '</dl>' +
+        '<p class="desc" style="margin:18px 0 0;line-height:1.7">用「YMusic 账号管理台」桌面版可以在本机直接推送新版本，' +
+        '用户在 App 里点更新就行，不用重装。</p>' +
+        '</div></div>' +
+        '<div class="card" style="margin-top:16px"><h3>今日在线 Top 3</h3><p class="desc">按累计在线时长</p>' +
+        '<div id="svTop"></div></div></div>';
+      $('#svRe').onclick = vService;
+      var tb = $('#svTop');
+      if (j.top && j.top.length) {
+        tb.innerHTML = j.top.map(function (t, i) {
+          return '<div class="rank"><div class="no">' + (i + 1) + '</div>' + avatar(t.uid, t.username, 30) +
+            '<div class="tx"><b>' + esc(t.username || '听众') + '</b><i>' + esc(short(t.uid)) + '</i></div>' +
+            '<div class="vv">' + esc(dur(t.ms)) + '</div></div>';
+        }).join('');
+      } else tb.innerHTML = '<div class="t2 tiny">今天还没有活跃记录</div>';
+    });
+  }
+
+  /* ═══════════ 设置 ═══════════ */
+  function vSettings() {
+    loading('');
+    var me = state.me || {};
+    var isSuper = me.role === 'superadmin';
+    $('#views').innerHTML = '<div class="view">' +
+      '<div id="setSuper"></div>' +
+      '<div class="grid2" style="margin-top:16px">' +
+      '<div class="card"><h3>邮箱白名单</h3><p class="desc">留空 = 不限制，任何邮箱都能注册和找回密码</p>' +
+      '<textarea class="inp" id="wlBox" style="min-height:110px;font-family:var(--mono);font-size:12.5px" ' +
+      'placeholder="一行一个邮箱，留空表示不限制"></textarea>' +
+      '<button class="btn pri" id="wlSave" style="margin-top:13px">保存白名单</button>' +
+      '</div>' +
+      '<div class="card"><h3>我的账号</h3><p class="desc">' + esc(me.username || '') + ' · ' +
+      (isSuper ? '开发者' : '管理员') + '</p>' +
+      '<dl class="kv" style="margin-bottom:16px">' +
+      kv('UID', '<span class="mono">' + esc(me.uid || '') + '</span>') +
+      kv('身份', roleBadge(me.role)) +
+      '</dl>' +
+      '<div style="display:flex;gap:9px;flex-wrap:wrap">' +
+      '<button class="btn" id="mePass">用邮箱改密码</button>' +
+      '<button class="btn gho" id="meBase">切换服务器</button>' +
+      '<button class="btn dan" id="meOut">退出登录</button>' +
+      '</div></div>' +
+      '<div class="card" style="margin-top:16px"><h3>隐私政策</h3>' +
+      '<p class="desc">管理台会展示用户的登录端类型和操作系统，采集依据写在这里。</p>' +
+      '<button class="plink" id="btnPrivacy" type="button">查看隐私政策</button>' +
+      '</div>' +
+      '</div></div>';
+
+    if (isSuper) {
+      $('#setSuper').innerHTML = '<div class="card"><h3>管理员授权码</h3>' +
+        '<p class="desc">谁在注册时填对了它，谁就成为管理员。只有开发者能看到和修改。</p>' +
+        '<div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">' +
+        '<label class="fld" style="flex:1;min-width:200px"><span>当前授权码</span>' +
+        '<input class="inp" id="cdNow" value="" readonly style="font-family:var(--mono)"></label>' +
+        '<button class="btn" id="cdEye" style="margin-bottom:0">显示</button>' +
+        '</div>' +
+        '<label class="fld" style="margin-top:14px;max-width:330px"><span>改成新的（至少 4 位）</span>' +
+        '<input class="inp" id="cdNew" placeholder="新的授权码"></label>' +
+        '<button class="btn pri" id="cdSave" style="margin-top:13px">更新授权码</button>' +
+        '</div>';
+      api('/api/admin/code').then(function (j) {
+        if (!j.ok) return;
+        $('#cdNow').value = j.hint;
+        $('#cdEye').onclick = function () {
+          api('/api/admin/code?reveal=1').then(function (r) {
+            if (!guard(r)) return;
+            modal({
+              title: '当前授权码', okText: '复制', cancelText: '关闭',
+              html: '<div style="font-family:var(--mono);font-size:22px;letter-spacing:.06em;padding:14px 16px;' +
+                'background:var(--bg2);border:1px solid var(--line2);border-radius:10px;text-align:center;' +
+                'word-break:break-all">' + esc(r.code || '') + '</div>' +
+                '<p style="margin:12px 0 0;line-height:1.6;font-size:12.5px;color:var(--t2)">把这个码发给要当管理员的人，' +
+                '让他们在注册时选「管理员」，或在 App 的「设置 → 管理账号」里填。</p>',
+              onOk: function (box, close) {
+                copy(r.code || '').then(function () { toast('已复制授权码'); });
+                close();
+              }
+            });
+          });
+        };
+        $('#cdSave').onclick = function () {
+          var c = ($('#cdNew').value || '').trim();
+          if (c.length < 4) return toast('授权码至少 4 位', 'warn');
+          api('/api/admin/code', { body: { code: c } }).then(function (r) {
+            if (!guard(r)) return;
+            $('#cdNew').value = '';
+            $('#cdNow').value = c.slice(0, 2) + '•'.repeat(Math.min(8, c.length - 4)) + c.slice(-2);
+            toast('授权码已更新');
+          });
+        };
+      });
+    }
+
+    api('/api/admin/whitelist').then(function (j) {
+      if (j.ok) $('#wlBox').value = (j.allow || []).join('\n');
+    });
+    $('#wlSave').onclick = function () {
+      api('/api/admin/whitelist', { body: { allow: $('#wlBox').value } }).then(function (j) {
+        if (!guard(j)) return;
+        $('#wlBox').value = (j.allow || []).join('\n');
+        toast((j.allow || []).length ? '已限制为 ' + j.allow.length + ' 个邮箱' : '已取消限制');
+      });
+    };
+    $('#meOut').onclick = function () { kickOut(); };
+    $('#btnPrivacy').onclick = privacyOpen;
+    $('#meBase').onclick = function () {
+      modal({
+        title: '切换服务器地址',
+        desc: '换一台服务器后需要重新登录。',
+        html: '<label class="fld"><span>地址</span><input class="inp" id="bsVal" value="' + esc(state.base || base()) + '" placeholder="https://your-server"></label>',
+        okText: '切换',
+        onOk: function (box) {
+          var v = (box.querySelector('#bsVal').value || '').trim().replace(/\/+$/, '');
+          saveBase(v); kickOut('已切换服务器，请重新登录');
+        }
+      });
+    };
+    $('#mePass').onclick = function () { changePass(); };
+  }
+  function changePass() {
+    var me = state.me || {};
+    modal({
+      title: '用邮箱改密码',
+      desc: '验证码会发到你账号绑定的邮箱。',
+      okText: '下一步',
+      html: '<div id="cpStep1"></div><div id="cpStep2" class="hide"></div>' +
+        '<div class="msg" id="cpMsg" style="color:var(--danger);min-height:18px;font-size:12.5px;margin-top:10px"></div>',
+      onOk: function (box, close) {
+        var s2 = box.querySelector('#cpStep2');
+        if (s2.classList.contains('hide')) {
+          api('/api/auth/pass/reqcode', { method: 'POST' }).then(function (j) {
+            var m = box.querySelector('#cpMsg');
+            if (!j.ok) { m.textContent = j.error || '发送失败'; return; }
+            box.querySelector('#cpStep1').innerHTML =
+              '<div class="t2 tiny" style="margin-bottom:11px">验证码已发到 ' + esc(j.to || '') + '</div>';
+            s2.classList.remove('hide');
+            s2.innerHTML = '<label class="fld"><span>邮箱验证码</span><input class="inp" id="cpCode" inputmode="numeric" maxlength="6" placeholder="6 位数字"></label>' +
+              '<label class="fld" style="margin-top:13px"><span>新密码</span><input class="inp" type="password" id="cpNew" placeholder="至少 6 位"></label>' +
+              '<div class="t2 tiny" style="margin-top:9px">改完其它设备会自动下线，这台保持登录。</div>';
+            box.querySelector('.mf .pri').textContent = '确认修改';
+          });
+          return false;
+        }
+        var m = box.querySelector('#cpMsg');
+        var code = box.querySelector('#cpCode').value.trim();
+        var np = box.querySelector('#cpNew').value;
+        if (!code) { m.textContent = '请填验证码'; return false; }
+        if (np.length < 6) { m.textContent = '新密码至少 6 位'; return false; }
+        api('/api/auth/pass', { body: { code: code, password: np } }).then(function (j) {
+          if (!j.ok) { m.textContent = j.error || '修改失败'; return; }
+          close(); toast('密码已修改');
+        });
+        return false;
+      }
+    });
+  }
+
+  /* ═══════════ 身份 / 登录 ═══════════ */
+  function renderWho() {
+    var me = state.me;
+    if (!me) return;
+    var c = hueOf(me.uid);
+    $('#whoAv').textContent = (me.username || '?').trim().charAt(0) || '?';
+    $('#whoAv').style.background = 'linear-gradient(135deg,' + c[1] + ',' + c[0] + 'deg)';
+    $('#whoName').textContent = me.username || '管理台';
+    $('#whoRole').textContent = me.role === 'superadmin' ? '开发者' : (me.role === 'admin' ? '管理员' : '用户');
+  }
+  function saveBase(v) {
+    state.base = v || '';
+    try { v ? localStorage.setItem(LS_BASE, v) : localStorage.removeItem(LS_BASE); } catch (e) { }
+  }
+  function saveToken(t) {
+    state.token = t || '';
+    try { t ? localStorage.setItem(LS_TOKEN, t) : localStorage.removeItem(LS_TOKEN); } catch (e) { }
+  }
+  function showGate(msg, ok) {
+    $('#gate').classList.remove('hide');
+    $('#shell').classList.add('hide');
+    var m = $('#gMsg');
+    m.className = 'msg' + (ok ? ' ok' : '');
+    m.textContent = msg || '';
+    setTimeout(function () { $('#gAcct').focus(); }, 80);
+  }
+  function kickOut(msg) {
+    saveToken('');
+    closeDrawer();
+    rtStop();                 /* 退出登录就不再轮询了 */
+    showGate(msg || '');
+  }
+  function enter() {
+    $('#gate').classList.add('hide');
+    $('#shell').classList.remove('hide');
+    renderWho();
+    go(state.view || 'overview');
+    rtStart();                /* 登录态下才开始盯注册 / 注销 */
+  }
+  function doLogin() {
+    var acct = ($('#gAcct').value || '').trim();
+    var pass = $('#gPass').value || '';
+    var m = $('#gMsg');
+    if (!acct) { m.className = 'msg'; m.textContent = '请填手机号或邮箱'; return; }
+    if (!pass) { m.className = 'msg'; m.textContent = '请填密码'; return; }
+    var btn = $('#gGo');
+    btn.disabled = true; btn.innerHTML = '<i class="ld"></i>登录中';
+    api('/api/auth/login', { body: { account: acct, password: pass } }).then(function (j) {
+      btn.disabled = false; btn.textContent = '登 录';
+      if (!j.ok) { m.className = 'msg'; m.textContent = j.error || '登录失败'; return; }
+      var role = (j.user && j.user.role) || 'user';
+      if (role !== 'admin' && role !== 'superadmin') {
+        m.className = 'msg';
+        m.textContent = '这个账号不是管理员。想升级？在手机 App 的「设置 → 管理账号」里填授权码。';
+        return;
+      }
+      saveToken(j.token);
+      state.me = { uid: j.user.uid, username: j.user.username, role: role };
+      api('/api/admin/state').then(function (s) {
+        if (!s.ok) {
+          if (s.__auth) return kickOut('登录状态异常，请重试');
+          m.className = 'msg'; m.textContent = s.error || '没有管理权限';
+          saveToken('');
+          return;
+        }
+        state.counts = s.counts || {};
+        state.service = s.service || null;
+        if (s.me) state.me = s.me;
+        m.className = 'msg'; m.textContent = '';
+        enter();
+      });
+    });
+  }
+
+  /* ═══════════ 原生窗口外壳（Electron） ═══════════
+     管理端 exe 是 frame:false 的无边框窗口（desktop-admin/main.js:253），
+     系统不给标题栏 —— 不自己画一条的话窗口既拖不动，也没有最小化/最大化/关闭，
+     用户只能 Alt+F4。预加载脚本（desktop-admin/preload.js）已经把桥搭好了，
+     这里把它接上。
+
+     只在 window.ymNative 存在时才接线：浏览器里直接打开 admin.html 时它不存在，
+     body 拿不到 .is-native（CSS 里那条 body.is-native .titlebar{display:flex}
+     不生效），按钮不会渲染出来 —— 不会出现「点不动的假标题栏」。 */
+  function initNativeShell() {
+    var nv = window.ymNative;
+    if (!nv || !nv.isDesktop) return;
+    document.body.classList.add('is-native');
+
+    $('#winMin').addEventListener('click', function () { nv.min(); });
+    $('#winMax').addEventListener('click', function () { nv.max(); });
+    $('#winClose').addEventListener('click', function () { nv.close(); });
+    /* 双击标题栏空白处 = 最大化/还原，跟 Windows 原生窗口一致。
+       点在三个窗口按钮上时不触发（那三个自己有各自的点击行为）。 */
+    $('#titlebar').addEventListener('dblclick', function (e) {
+      if (e.target.closest && e.target.closest('.tb-win')) return;
+      nv.max();
+    });
+    nv.isMax().then(function (m) { document.body.classList.toggle('is-max', !!m); })
+      .catch(function () { });
+    nv.onMaxState(function (m) { document.body.classList.toggle('is-max', !!m); });
+
+    /* 标题栏中间显示当前连的是哪台服务。管理台可以连不同的主服务
+       （设置里能改地址），一眼看到比让人去翻设置强。 */
+    nv.serverBase().then(function (b) {
+      $('#tbAddr').textContent = b ? ('服务：' + b) : '';
+    }).catch(function () { });
+
+    /* 外部链接一律丢给系统浏览器，不在应用窗口里开网页 */
+    document.addEventListener('click', function (e) {
+      var a = e.target.closest ? e.target.closest('a[href^="http"]') : null;
+      if (a) { e.preventDefault(); nv.openExternal(a.href); }
+    });
+  }
+
+  /* ═══════════ 启动 ═══════════ */
+  function boot() {
+    /* 标题栏要在登录闸门之前就接好 —— 闸门期间窗口同样得能拖能关 */
+    initNativeShell();
+    var saved = '';
+    try { saved = localStorage.getItem(LS_BASE) || ''; } catch (e) { }
+    saveBase(saved || BAKED_BASE);
+    if (!/^https?:\/\//.test(state.base) && state.base) state.base = 'http://' + state.base;
+    $('#gBase').value = state.base || '';
+    if (BAKED_BASE) $('#gBase').placeholder = BAKED_BASE;
+    var h = (location.hash || '').replace(/^#\/?/, '');
+    var hv = h.split('/')[0];
+    if (hv && { overview: 1, users: 1, audit: 1, avatars: 1, notice: 1, service: 1, vipguard: 1, settings: 1 }[hv]) state.view = hv;
+    window.addEventListener('hashchange', function () {
+      var v = (location.hash || '').replace(/^#\/?/, '').split('/')[0];
+      if (v && v !== state.view) go(v);
+    });
+    renderNav();
+    renderWho0();
+
+    $('#gGo').addEventListener('click', doLogin);
+    $('#gPrivacy').addEventListener('click', privacyOpen);
+    $('#gPass').addEventListener('keydown', function (e) { if (e.key === 'Enter') doLogin(); });
+    $('#gAcct').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('#gPass').focus(); });
+    $('#gBase').addEventListener('change', function () {
+      var v = ($('#gBase').value || '').trim().replace(/\/+$/, '');
+      if (v && !/^https?:\/\//.test(v)) v = 'http://' + v;
+      saveBase(v);
+    });
+    $('#hamb').addEventListener('click', function () { sideOpen(!$('#side').classList.contains('on')); });
+    $('#burgerMask').addEventListener('click', function () { sideOpen(false); });
+    $('#mask').addEventListener('click', closeDrawer);
+    $('#who').addEventListener('click', function () { go('settings'); sideOpen(false); });
+    $('#btnSync').addEventListener('click', function () { VAR[state.view] && VAR[state.view](); toast('已刷新', '', 1200); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') { closeDrawer(); }
+    });
+
+    var tok = '';
+    try { tok = localStorage.getItem(LS_TOKEN) || ''; } catch (e) { }
+    if (!tok) return showGate('');
+    state.token = tok;
+    api('/api/admin/state').then(function (j) {
+      if (!j.ok) return kickOut('');
+      state.counts = j.counts || {};
+      state.service = j.service || null;
+      state.me = j.me || null;
+      enter();
+    });
+  }
+  function renderWho0() {
+    $('#whoAv').textContent = 'Y';
+    $('#whoAv').style.background = 'linear-gradient(135deg,#6EE7C4,#12A05E)';
+  }
+
+  /* ═══════════ 会员凭证（嵌入守护页） ═══════════ */
+  function vVipGuard() {
+    /* /kg.html 与本页同源、且同样读 ym.adm.token —— iframe 进来就是登录态，
+       开发者不用登第二次。每次切入重建 iframe，等于顺手刷新一次三平台状态。 */
+    $('#views').innerHTML = '<div class="view">' +
+      '<div class="card" style="padding:0;overflow:hidden">' +
+      '<iframe src="/kg.html" title="会员凭证守护" ' +
+      'style="display:block;width:100%;border:0;height:calc(100vh - 170px);min-height:600px;background:#070C09"></iframe>' +
+      '</div></div>';
+  }
+
+  var VAR = { overview: vOverview, users: vUsers, audit: vAudit, avatars: vAvatars, notice: vNotice, service: vService, vipguard: vVipGuard, settings: vSettings };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-label="YMusic">
+  <title>YMusic 单色版</title>
+  <desc>纯白字形，透明底，用于深色标题栏、通知栏与单色印刷。</desc>
+  <g transform="translate(5.957 -16.892) scale(1.07527)">
+  <g fill="none" stroke="#FFFFFF" stroke-linecap="round" opacity="0.42">
+    <path d="M51.50 198.00 A56 56 0 0 1 67.08 124.70" stroke-width="8"/>
+    <path d="M37.00 212.50 A76 76 0 0 1 58.60 106.30" stroke-width="7" opacity="0.72"/>
+  </g>
+  <path fill-rule="evenodd" fill="#FFFFFF"
+    d="M100 135 a35 35 0 1 0 0 70 a35 35 0 1 0 0 -70 Z
+       M100 161 a9 9 0 1 0 0 18 a9 9 0 1 0 0 -18 Z"/>
+  <path d="M136 166 L144 66" fill="none" stroke="#FFFFFF" stroke-width="25" stroke-linecap="round"/>
+  <path d="M144 68 C 176 70 194 92 196 124" fill="none" stroke="#FFFFFF" stroke-width="21" stroke-linecap="round"/>
+  </g>
+</svg>

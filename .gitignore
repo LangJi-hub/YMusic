@@ -1,0 +1,33 @@
+# ── 运行时数据：用户账号 / 会话 / 密钥 / 缓存，绝不可提交 ──
+data/
+
+# ── 下载产物与更新包 ──
+downloads/
+Downloads/
+
+# ── 运行期状态文件 ──
+runtime.json
+*.log
+logs/
+
+# ── 历史备份与构建产物 ──
+*.bak
+*.bak-*
+_backup/
+_backups/
+*-backup-*/
+web-backup-*/
+dist/
+*.tar.gz
+
+# ── 依赖与缓存 ──
+node_modules/
+.cache/
+
+# ── 编辑器与系统 ──
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+__pycache__/
+*.pyc

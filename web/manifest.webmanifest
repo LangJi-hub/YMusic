@@ -1,0 +1,29 @@
+{
+  "name": "YMusic · 音乐下载器",
+  "short_name": "YMusic",
+  "description": "多平台音乐搜索、试听与下载：酷狗 / 网易云 / QQ音乐 / B站，四平台互补换源。",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#050806",
+  "theme_color": "#0A120D",
+  "lang": "zh-CN",
+  "dir": "ltr",
+  "categories": ["music", "entertainment", "utilities"],
+  "prefer_related_applications": false,
+  "icons": [
+    { "src": "/icons/favicon-64.png", "sizes": "64x64", "type": "image/png" },
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "/logo-mark.svg", "sizes": "any", "type": "image/svg+xml" }
+  ],
+  "shortcuts": [
+    { "name": "搜索音乐", "short_name": "搜索", "url": "/?v=search" },
+    { "name": "播放记录", "short_name": "记录", "url": "/?v=history" },
+    { "name": "下载任务", "short_name": "下载", "url": "/?v=tasks" }
+  ]
+}

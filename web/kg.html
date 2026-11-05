@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>会员凭证守护 · YMusic</title>
+<meta name="theme-color" content="#070C09">
+<link rel="icon" href="logo-mark.svg" type="image/svg+xml">
+<style>
+:root{
+  --bg0:#070C09; --bg1:#0C1310; --bg2:#111A15; --bg3:#16221B;
+  --line:#1C2A22; --line2:#26382D;
+  --g400:#4ADE80; --g500:#24C97C; --g600:#12A05E;
+  --t0:#E8F5EC; --t1:#9BB3A5; --t2:#6B8578;
+  --danger:#F87171; --danger-bg:#2A1414; --danger-line:#5A2020;
+  --warn:#F0B429; --warn-bg:#2A220E; --warn-line:#5A4A18;
+  --ok-bg:#0F2419; --ok-line:#1E4630;
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --mono:ui-monospace,"SF Mono",Consolas,"Cascadia Mono",monospace;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{background:var(--bg0);color:var(--t0);font:15px/1.6 var(--font);
+  -webkit-font-smoothing:antialiased;min-height:100vh}
+.wrap{max-width:680px;margin:0 auto;padding:24px 16px 64px}
+h1{font-size:20px;font-weight:650;margin:0 0 4px}
+.sub{color:var(--t2);font-size:13px;margin-bottom:18px}
+.tabs{display:flex;gap:8px;margin-bottom:14px}
+.tab{flex:1;text-align:center;padding:10px 0;border-radius:11px;font-size:14px;
+  font-weight:600;cursor:pointer;background:var(--bg2);
+  border:1px solid var(--line);color:var(--t2);user-select:none}
+.tab.on{background:var(--bg3);border-color:var(--g600);color:var(--g400)}
+.card{background:var(--bg2);border:1px solid var(--line);border-radius:14px;
+  padding:16px;margin-bottom:14px}
+.card h2{font-size:14px;font-weight:600;margin:0 0 10px;color:var(--t1);
+  letter-spacing:.02em}
+.badge{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;
+  font-weight:600;margin-bottom:8px}
+.b-ok{background:var(--ok-bg);color:var(--g400);border:1px solid var(--ok-line)}
+.b-warn{background:var(--warn-bg);color:var(--warn);border:1px solid var(--warn-line)}
+.b-crit{background:var(--danger-bg);color:var(--danger);border:1px solid var(--danger-line)}
+.b-unk{background:var(--bg3);color:var(--t2);border:1px solid var(--line2)}
+#msg{font-size:14px;line-height:1.65;color:var(--t0);word-break:break-all}
+.row{display:flex;justify-content:space-between;gap:12px;padding:7px 0;
+  border-bottom:1px solid var(--line);font-size:13.5px}
+.row:last-child{border-bottom:0}
+.row .k{color:var(--t2);flex:0 0 auto}
+.row .v{color:var(--t0);text-align:right;word-break:break-all;font-variant-numeric:tabular-nums}
+.mono{font-family:var(--mono);font-size:12.5px}
+.tip{color:var(--t2);font-size:12.5px;line-height:1.6;margin:8px 0 12px}
+input[type=date],input[type=number],input[type=password],input[type=text],textarea{
+  background:var(--bg1);border:1px solid var(--line2);
+  color:var(--t0);border-radius:9px;padding:9px 11px;font-size:14px;outline:none;
+  font-family:inherit}
+input[type=password],input[type=text]{width:100%}
+input[type=number]{width:64px;text-align:center}
+textarea{width:100%;min-height:88px;resize:vertical;
+  font-family:var(--mono);font-size:12.5px;line-height:1.55;word-break:break-all}
+input:focus,textarea:focus{border-color:var(--g600)}
+.btn{display:inline-block;background:var(--g600);color:#04120B;border:0;
+  border-radius:10px;padding:10px 18px;font-size:14px;font-weight:600;cursor:pointer}
+.btn:active{background:var(--g500)}
+.btn[disabled]{opacity:.45;cursor:default}
+.btn.ghost{background:transparent;border:1px solid var(--line2);color:var(--t1)}
+.field{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+#qrbox{margin-top:14px;text-align:center;display:none}
+#qrimg{width:200px;height:200px;background:#fff;border-radius:12px;padding:8px}
+#qrmsg{margin-top:10px;font-size:13.5px;color:var(--t1)}
+#qrmsg.ok{color:var(--g400)}
+#qrmsg.err{color:var(--danger)}
+.hint{font-size:12.5px;color:var(--t2);margin-top:10px;line-height:1.65}
+.hint.err{color:var(--danger)}
+.hint.ok{color:var(--g400)}
+a{color:var(--g400)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>会员凭证守护</h1>
+  <div class="sub">高码率链路对登录态是全或无的，凭证一失效，全站会员曲当场哑火。
+    <span style="white-space:nowrap"><a href="/admin.html#vipguard">← 回到管理台</a></span></div>
+
+  <div class="card" id="logincard" style="display:none">
+    <h2>开发者登录</h2>
+    <div class="tip">这个页面要管理员身份才能改设置。直接在下面登录，凭证只存在本机浏览器。</div>
+    <div class="field"><input type="text" id="lacct" placeholder="手机号或邮箱" autocomplete="username"></div>
+    <div class="field"><input type="password" id="lpass" placeholder="密码" autocomplete="current-password"></div>
+    <div class="field"><button class="btn" id="lgo">登 录</button></div>
+    <div id="lmsg" class="hint"></div>
+  </div>
+
+  <div class="tabs" id="tabs">
+    <div class="tab on" data-p="kg">酷狗音乐</div>
+    <div class="tab" data-p="qq">QQ 音乐</div>
+    <div class="tab" data-p="ne">网易云</div>
+  </div>
+
+  <div class="card">
+    <h2>当前状态</h2>
+    <div id="badge" class="badge b-unk">读取中</div>
+    <div id="msg">正在读取…</div>
+    <div id="meta"></div>
+    <div class="field" style="margin:14px 0 0">
+      <button class="btn ghost" id="probe">立即体检</button>
+      <span id="proberes" class="hint" style="margin:0"></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>登录账号</h2>
+    <div id="acct"></div>
+  </div>
+
+  <div class="card">
+    <h2>会员到期日</h2>
+    <div class="tip" id="exptip"></div>
+    <div class="field">
+      <input type="date" id="exp">
+      <span style="color:var(--t2);font-size:13.5px">提前</span>
+      <input type="number" id="days" value="7" min="1" max="60">
+      <span style="color:var(--t2);font-size:13.5px">天提醒</span>
+      <button class="btn" id="save">保存</button>
+    </div>
+    <div id="saveres" class="hint"></div>
+  </div>
+
+  <div class="card" id="qrcard">
+    <h2>扫码换证</h2>
+    <div class="tip" id="qrtip"></div>
+    <button class="btn" id="qrbtn">生成二维码</button>
+    <div id="qrbox">
+      <img id="qrimg" alt="登录二维码">
+      <div id="qrmsg"></div>
+    </div>
+  </div>
+
+  <div class="card" id="credcard" style="display:none">
+    <h2>或粘贴 cookie</h2>
+    <div class="tip" id="credtip"></div>
+    <textarea id="ck" placeholder="整行 Cookie"></textarea>
+    <div class="field" style="margin:10px 0 0">
+      <button class="btn" id="cksave">保存并体检</button>
+      <span id="ckres" class="hint" style="margin:0"></span>
+    </div>
+  </div>
+
+  <div class="hint" id="foothint"></div>
+</div>
+
+<script>
+(function () {
+  var LS_TOKEN = 'ym.adm.token';
+  var pollTimer = null;
+  var cur = 'kg';
+
+  var PLAT = {
+    kg: {
+      name: '酷狗音乐',
+      base: '/api/admin/kg',
+      idLabel: 'userid',
+      idField: 'userid',
+      maskField: 'tokenMask',
+      maskLabel: 'token',
+      hasCred: false,
+      hasQr: true,
+      probe: true,
+      expTip: '酷狗没有开放任何可查询到期日的接口（实测 /vip/*、gateway、mobiles 全 404，' +
+        'songinfo 响应里也没有过期字段），所以需要手动填一次。<br>位置：酷狗 App → 我的 → 会员中心。',
+      qrTip: '生成二维码后用酷狗 App 扫一扫。成功后新凭证直接写盘，' +
+        '下一个请求就生效，<b>不用重启服务</b>。',
+      credTip: '',
+      ckPlaceholder: 'token=…; userid=…',
+      foot: '每 30 分钟自动巡检一次；临期或失效会发邮件到开发者账号。'
+    },
+    qq: {
+      name: 'QQ 音乐',
+      base: '/api/admin/qq',
+      idLabel: 'uin',
+      idField: 'uin',
+      maskField: 'keyMask',
+      maskLabel: 'qqmusic_key',
+      hasCred: true,
+      hasQr: true,
+      probe: true,
+      expTip: 'QQ 也没有可查权益到期日的公开接口，同样手动填一次。<br>' +
+        '位置：QQ音乐网页版 y.qq.com → 我的 → 会员中心。',
+      qrTip: '生成二维码后用<b>手机 QQ 音乐</b> 或<b>手机 QQ</b> 扫一扫（不是微信）。' +
+        '扫码通过后服务端会跟一遍跳转去取 <span class="mono">qqmusic_key</span>；' +
+        '就算这步被安全校验拦住，只要体检能过照样算接通，实在不行再用下面的「粘贴 cookie」。',
+      ckPlaceholder: 'uin=o0123456789; qqmusic_key=…; qm_keyst=…',
+      credTip: 'QQ 扫码最后一步常被安全校验拦住，粘贴更稳：<br>' +
+        '1. 浏览器打开 <a href="https://y.qq.com/" target="_blank">y.qq.com</a>，用<b>开好会员的那个号</b>登录<br>' +
+        '2. F12 → Network → 刷新页面 → 点任意一条 <span class="mono">y.qq.com</span> 请求<br>' +
+        '3. 在 Request Headers 里复制 <span class="mono">Cookie</span> 后面<b>整行</b>，粘到下面',
+      foot: '巡检同样每 30 分钟一次；QQ 探活样本是《稻香》VIP 曲，能出无损才算权益完整。'
+    },
+    ne: {
+      name: '网易云',
+      base: '/api/admin/ne',
+      idLabel: 'uid',
+      idField: 'uid',
+      maskField: 'keyMask',
+      maskLabel: 'MUSIC_U',
+      hasCred: true,
+      hasQr: true,
+      probe: true,
+      expTip: '到期日会自动读取（网易云 <span class="mono">vip/info</span> 有 expireTime），不用手填。<br>' +
+        '这里的日期只用于「手工纠偏」：填了就按你填的算，清空则回到自动读取。',
+      qrTip: '生成二维码后用<b>网易云音乐 App</b> 扫一扫 → 在手机上点「确认登录」。' +
+        '成功后<b>整行 cookie</b>（含设备 cookie）自动写盘，下一个请求就生效，<b>不用重启服务</b>。',
+      ckPlaceholder: 'music.163.com 的整行 Cookie（必须带 NMTID）',
+      credTip: '扫码拿不到 MUSIC_U 时用它兜底（个别账号会这样），一步到位：<br>' +
+        '1. 浏览器打开 <a href="https://music.163.com/" target="_blank">music.163.com</a>，用<b>开好会员的那个号</b>登录<br>' +
+        '2. F12 → Network → 刷新页面 → 点任意一条 <span class="mono">music.163.com</span> 请求<br>' +
+        '3. 复制 <span class="mono">Cookie</span> <b>整行</b>粘进来 —— ' +
+        '<b>只粘 <span class="mono">MUSIC_U=…</span> 不行</b>：网易云把登录态绑在设备 cookie 上，' +
+        '光给 MUSIC_U 会被当成新设备，会员曲只给 30 秒试听',
+      foot: '巡检每 30 分钟一次；网易云的探活样本是《孤勇者》会员曲 —— 匿名只给 30 秒试听，出 FLAC 才算权益完整。'
+    }
+  };
+
+  function el(id) { return document.getElementById(id); }
+
+  function tok() {
+    try { return localStorage.getItem(LS_TOKEN) || ''; } catch (e) { return ''; }
+  }
+
+  function saveTok(t) {
+    try { t ? localStorage.setItem(LS_TOKEN, t) : localStorage.removeItem(LS_TOKEN); } catch (e) { }
+  }
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+  }
+
+  function api(path, opt) {
+    opt = opt || {};
+    var hdr = { 'Content-Type': 'application/json' };
+    var t = tok();
+    if (t) hdr['Authorization'] = 'Bearer ' + t;
+    return fetch(path, {
+      method: opt.method || 'GET',
+      headers: hdr,
+      body: opt.body ? JSON.stringify(opt.body) : null
+    }).then(function (r) {
+      return r.json().then(function (j) {
+        j.__status = r.status;
+        /* 401 = 没登录 / 会话过期；403 = 有账号但不是管理员。
+           两种都直接把登录框摆出来，别让用户对着「未登录」猜。 */
+        if (r.status === 401) { saveTok(''); showLogin(j.error || '登录已失效，请重新登录'); }
+        return j;
+      });
+    });
+  }
+
+  function showLogin(msg) {
+    el('logincard').style.display = 'block';
+    if (msg) el('lmsg').innerHTML = esc(msg);
+    el('badge').className = 'badge b-unk';
+    el('badge').innerHTML = '未登录';
+    el('msg').innerHTML = '先登录，登录后这里自动刷新。';
+    el('meta').innerHTML = '';
+    el('acct').innerHTML = '';
+  }
+
+  function hideLogin() {
+    el('logincard').style.display = 'none';
+    el('lmsg').innerHTML = '';
+  }
+
+  function doLogin() {
+    var a = (el('lacct').value || '').replace(/^\s+|\s+$/g, '');
+    var p = el('lpass').value || '';
+    if (!a || !p) { el('lmsg').innerHTML = '账号和密码都要填'; return; }
+    el('lgo').disabled = true;
+    el('lmsg').innerHTML = '登录中…';
+    fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ account: a, password: p })
+    }).then(function (r) {
+      return r.json().then(function (j) { j.__status = r.status; return j; });
+    }).then(function (j) {
+      el('lgo').disabled = false;
+      if (!j.ok) { el('lmsg').innerHTML = esc(j.error || ('登录失败 HTTP ' + j.__status)); return; }
+      var role = (j.user && j.user.role) || 'user';
+      if (role !== 'admin' && role !== 'superadmin') {
+        el('lmsg').innerHTML = '这个账号不是管理员';
+        return;
+      }
+      saveTok(j.token);
+      el('lpass').value = '';
+      hideLogin();
+      load();
+    }).catch(function (e) {
+      el('lgo').disabled = false;
+      el('lmsg').innerHTML = '登录失败：' + esc(String(e));
+    });
+  }
+
+  el('lgo').onclick = doLogin;
+  el('lpass').onkeydown = function (ev) {
+    if ((ev.keyCode || ev.which) === 13) doLogin();
+  };
+
+  function fmtTime(ms) {
+    if (!ms) return '-';
+    var d = new Date(Number(ms));
+    function p(n) { return n < 10 ? '0' + n : '' + n; }
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) +
+      ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+
+  function badgeClass(lv) {
+    if (lv === 'ok') return 'b-ok';
+    if (lv === 'warn') return 'b-warn';
+    if (lv === 'critical') return 'b-crit';
+    return 'b-unk';
+  }
+
+  function badgeText(lv) {
+    if (lv === 'ok') return '正常';
+    if (lv === 'warn') return '临近到期';
+    if (lv === 'critical') return '需要处理';
+    return '未知';
+  }
+
+  /* 平台切换：同一个 DOM 复用，避免两套结构各改一遍 */
+  function switchPlat(p) {
+    if (!PLAT[p]) return;
+    cur = p;
+    var tabs = el('tabs').getElementsByTagName('div');
+    for (var i = 0; i < tabs.length; i++) {
+      var on = tabs[i].getAttribute('data-p') === p;
+      tabs[i].className = 'tab' + (on ? ' on' : '');
+    }
+    var P = PLAT[p];
+    el('exptip').innerHTML = P.expTip;
+    el('qrtip').innerHTML = P.qrTip;
+    el('credtip').innerHTML = P.credTip;
+    el('ck').placeholder = P.ckPlaceholder || '';
+    el('credcard').style.display = P.hasCred ? 'block' : 'none';
+    el('qrcard').style.display = P.hasQr ? 'block' : 'none';
+    el('probe').style.display = P.probe ? 'inline-block' : 'none';
+    el('proberes').innerHTML = '';
+    el('foothint').innerHTML = P.foot;
+    /* 换平台要把上一轮的残留清掉，否则会看到别家的号码 */
+    el('badge').className = 'badge b-unk';
+    el('badge').innerHTML = '读取中';
+    el('msg').innerHTML = '正在读取…';
+    el('meta').innerHTML = '';
+    el('acct').innerHTML = '';
+    el('exp').value = '';
+    el('days').value = '7';
+    el('saveres').innerHTML = '';
+    el('ckres').innerHTML = '';
+    el('ck').value = '';
+    el('qrbox').style.display = 'none';
+    el('qrmsg').innerHTML = '';
+    stopPoll();
+    load();
+  }
+
+  el('tabs').onclick = function (ev) {
+    var t = ev.target || ev.srcElement;
+    var p = t && t.getAttribute ? t.getAttribute('data-p') : '';
+    if (p && p !== cur) switchPlat(p);
+  };
+
+  function load() {
+    var P = PLAT[cur];
+    if (!tok()) {
+      showLogin('');
+      return;
+    }
+    api(P.base + '/health').then(function (j) {
+      if (!j.ok) {
+        if (j.__status === 403) {
+          el('badge').className = 'badge b-crit';
+          el('badge').innerHTML = '权限不足';
+          el('msg').innerHTML = esc(j.error || '这个账号没有管理权限');
+          return;
+        }
+        el('badge').className = 'badge b-crit';
+        el('badge').innerHTML = '读取失败';
+        el('msg').innerHTML = esc(j.error || ('HTTP ' + j.__status));
+        return;
+      }
+      hideLogin();
+      var h = j.health || {}, v = j.vip || {};
+      el('badge').className = 'badge ' + badgeClass(h.level);
+      el('badge').innerHTML = badgeText(h.level);
+      el('msg').innerHTML = esc(h.message || '尚无体检记录');
+
+      var rows = [];
+      rows.push(['上次巡检', esc(h.checkedAtText || '未跑过')]);
+      if (h.expireAt) {
+        rows.push(['会员到期', esc(h.expireAt) + '（剩余 ' + esc(h.daysLeft) + ' 天）']);
+      } else {
+        rows.push(['会员到期', '未登记']);
+      }
+      rows.push(['提醒阈值', '提前 ' + esc(h.notifyDays || v.notifyDays || 7) + ' 天']);
+      if (P.hasCred) {
+        rows.push(['cookie 长度', esc(j.cookieLen || 0) + ' 字节']);
+      }
+      var html = '';
+      for (var i = 0; i < rows.length; i++) {
+        html += '<div class="row"><span class="k">' + rows[i][0] +
+          '</span><span class="v">' + rows[i][1] + '</span></div>';
+      }
+      el('meta').innerHTML = html;
+
+      var acct = '';
+      acct += '<div class="row"><span class="k">昵称</span><span class="v">' + esc(j.nickname || '-') + '</span></div>';
+      acct += '<div class="row"><span class="k">' + P.idLabel + '</span><span class="v mono">' +
+        esc(j[P.idField] || '-') + '</span></div>';
+      acct += '<div class="row"><span class="k">' + esc(P.maskLabel) +
+        '</span><span class="v mono">' + esc(j[P.maskField] || '-') + '</span></div>';
+      acct += '<div class="row"><span class="k">凭证保存于</span><span class="v">' +
+        esc(j.savedAt || '-') + '</span></div>';
+      if (P.hasCred && !j.logged) {
+        acct += '<div class="row"><span class="k">凭证</span><span class="v">未配置</span></div>';
+      }
+      acct += '<div class="row"><span class="k">登录态</span><span class="v">' +
+        '<a href="javascript:;" id="logout">退出</a></span></div>';
+      el('acct').innerHTML = acct;
+
+      var lo = el('logout');
+      if (lo) lo.onclick = function () { saveTok(''); showLogin('已退出登录'); };
+
+      if (v.expireAt) el('exp').value = v.expireAt;
+      if (v.notifyDays) el('days').value = v.notifyDays;
+    }).catch(function (e) {
+      el('badge').className = 'badge b-crit';
+      el('badge').innerHTML = '网络错误';
+      el('msg').innerHTML = esc(String(e));
+    });
+  }
+
+  el('save').onclick = function () {
+    var P = PLAT[cur];
+    var d = el('exp').value || '';
+    var n = parseInt(el('days').value, 10) || 7;
+    if (!d) { el('saveres').className = 'hint'; el('saveres').innerHTML = '请先选一个日期'; return; }
+    el('save').disabled = true;
+    api(P.base + '/expire', { method: 'POST', body: { expireAt: d, notifyDays: n } })
+      .then(function (j) {
+        el('save').disabled = false;
+        if (j.ok) {
+          el('saveres').className = 'hint ok';
+          el('saveres').innerHTML = '已保存：' + esc(j.vip.expireAt) +
+            '，提前 ' + esc(j.vip.notifyDays) + ' 天提醒。下次巡检开始倒计时。';
+          load();
+        } else {
+          el('saveres').className = 'hint err';
+          el('saveres').innerHTML = '保存失败：' + esc(j.error || ('HTTP ' + j.__status));
+          if (j.__status === 401 || j.__status === 403) load();
+        }
+      }).catch(function (e) {
+        el('save').disabled = false;
+        el('saveres').className = 'hint err';
+        el('saveres').innerHTML = '保存失败：' + esc(String(e));
+      });
+  };
+
+  /* 立即体检：三平台都有独立 probe 路由，真拉一次会员曲来判定（酷狗与 cron 的
+     kg-guard.py 同一判据、同一首《稻香》Hi-Res，结果写同一个 kg-health.json） */
+  el('probe').onclick = function () {
+    var P = PLAT[cur];
+    if (!P.probe) return;
+    el('probe').disabled = true;
+    el('proberes').className = 'hint';
+    el('proberes').innerHTML = '体检中，要真拉一次 VIP 曲…';
+    api(P.base + '/probe').then(function (j) {
+      el('probe').disabled = false;
+      if (!j.ok) {
+        el('proberes').className = 'hint err';
+        el('proberes').innerHTML = esc(j.error || ('HTTP ' + j.__status));
+        return;
+      }
+      var r = j.result || {};
+      el('proberes').className = 'hint ' + (r.level === 'ok' ? 'ok' : 'err');
+      el('proberes').innerHTML = esc(r.message || '完成');
+      load();
+    }).catch(function (e) {
+      el('probe').disabled = false;
+      el('proberes').className = 'hint err';
+      el('proberes').innerHTML = esc(String(e));
+    });
+  };
+
+  el('cksave').onclick = function () {
+    var ck = (el('ck').value || '').replace(/^\s+|\s+$/g, '');
+    if (!ck) { el('ckres').className = 'hint'; el('ckres').innerHTML = '先把 cookie 粘进来'; return; }
+    el('cksave').disabled = true;
+    el('ckres').className = 'hint';
+    el('ckres').innerHTML = '保存并体检中…';
+    api(PLAT[cur].base + '/cred', { method: 'POST', body: { cookie: ck } }).then(function (j) {
+      el('cksave').disabled = false;
+      if (!j.ok) {
+        el('ckres').className = 'hint err';
+        el('ckres').innerHTML = esc(j.error || ('HTTP ' + j.__status));
+        return;
+      }
+      var r = j.result || {};
+      el('ckres').className = 'hint ' + (r.level === 'ok' ? 'ok' : 'err');
+      el('ckres').innerHTML = '已保存。' + esc(r.message || '');
+      el('ck').value = '';
+      load();
+    }).catch(function (e) {
+      el('cksave').disabled = false;
+      el('ckres').className = 'hint err';
+      el('ckres').innerHTML = esc(String(e));
+    });
+  };
+
+  function stopPoll() {
+    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+  }
+
+  function poll(qr) {
+    var P = PLAT[cur];
+    api(P.base + '/qr/poll?qrcode=' + encodeURIComponent(qr)).then(function (j) {
+      if (!j.ok) {
+        stopPoll();
+        el('qrmsg').className = 'err';
+        el('qrmsg').innerHTML = esc(j.error || '轮询失败') +
+          (P.hasCred ? '（改用上面的「粘贴 cookie」）' : '');
+        return;
+      }
+      if (j.state === 4) {
+        stopPoll();
+        el('qrmsg').className = 'ok';
+        el('qrmsg').innerHTML = '已接通：' + esc(j.nickname || '') +
+          '（' + P.idLabel + ' ' + esc(j[P.idField] || j.userid || '') + '）。新凭证已生效。';
+        setTimeout(load, 800);
+        return;
+      }
+      if (j.state === 0) {
+        stopPoll();
+        el('qrmsg').className = 'err';
+        el('qrmsg').innerHTML = '二维码已失效，请重新生成。';
+        return;
+      }
+      el('qrmsg').className = '';
+      el('qrmsg').innerHTML = esc(j.msg || '');
+    }).catch(function () { /* 单次失败不打断轮询 */ });
+  }
+
+  el('qrbtn').onclick = function () {
+    var P = PLAT[cur];
+    stopPoll();
+    el('qrbtn').disabled = true;
+    el('qrmsg').className = '';
+    el('qrmsg').innerHTML = '正在申请二维码…';
+    el('qrbox').style.display = 'block';
+    api(P.base + '/qr').then(function (j) {
+      el('qrbtn').disabled = false;
+      if (!j.ok) {
+        el('qrmsg').className = 'err';
+        el('qrmsg').innerHTML = esc(j.error || '申请失败');
+        return;
+      }
+      var img = j.img || '';
+      if (img && img.indexOf('data:') !== 0) img = 'data:image/png;base64,' + img;
+      el('qrimg').src = img;
+      el('qrmsg').innerHTML = '等待扫码…';
+      var id = j.qrcode;
+      pollTimer = setInterval(function () { poll(id); }, 2000);
+    }).catch(function (e) {
+      el('qrbtn').disabled = false;
+      el('qrmsg').className = 'err';
+      el('qrmsg').innerHTML = '申请失败：' + esc(String(e));
+    });
+  };
+
+  switchPlat('kg');
+})();
+</script>
+</body>
+</html>

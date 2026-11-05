@@ -1,0 +1,8 @@
+[
+  {
+    "id": "server",
+    "name": "主数据目录（服务与界面共用）",
+    "dir": "/opt/ymusic/data",
+    "main": true
+  }
+]

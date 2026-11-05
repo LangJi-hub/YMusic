@@ -1,0 +1,32 @@
+[Unit]
+Description=YMusic 账号管理台
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ymusic
+Group=ymusic
+WorkingDirectory=/opt/ymusic/admin
+
+Environment=PORT=8803
+Environment=NODE_ENV=production
+
+ExecStart=/usr/bin/node /opt/ymusic/admin/server.mjs
+
+Restart=always
+RestartSec=3
+KillSignal=SIGTERM
+TimeoutStopSec=15
+
+StandardOutput=append:/var/log/ymusic/admin.log
+StandardError=append:/var/log/ymusic/admin.log
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+ReadWritePaths=/opt/ymusic /var/log/ymusic
+
+[Install]
+WantedBy=multi-user.target

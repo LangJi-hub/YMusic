@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>YMusic 账号管理台</title>
+<style>
+:root{
+  --bg0:#050806; --bg1:#0A120D; --bg2:#101B14; --bg3:#18261C; --line:#223528;
+  --g300:#86EFAC; --g400:#4ADE80; --g500:#22C55E; --g600:#16A34A; --g700:#15803D;
+  --teal:#2DD4BF; --vip:#F0B429; --danger:#F87171;
+  --t0:#E8F5EC; --t1:#9BB3A5; --t2:#5D7368; --t3:#3E5248;
+  --r:12px; --r-pill:999px;
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg0);color:var(--t0);font-family:var(--font);font-size:14px;line-height:1.6;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
+button{background:none;border:0;cursor:pointer;padding:0}
+input,select,textarea{background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:7px 11px;outline:none;min-width:0}
+input:focus,select:focus,textarea:focus{border-color:var(--g600)}
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:5px}
+::-webkit-scrollbar-track{background:transparent}
+
+/* 顶栏 */
+header{height:58px;display:flex;align-items:center;gap:14px;padding:0 18px;background:var(--bg1);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:30}
+.logo{display:flex;align-items:center;gap:9px;font-weight:700;font-size:15.5px;letter-spacing:.3px}
+.logo i{width:9px;height:9px;border-radius:50%;background:var(--g500);box-shadow:0 0 10px var(--g500)}
+.spacer{flex:1}
+.pill{display:inline-flex;align-items:center;gap:6px;background:var(--bg2);border:1px solid var(--line);border-radius:var(--r-pill);padding:5px 12px;font-size:12.5px;color:var(--t1)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--t3)}
+.dot.on{background:var(--g400);box-shadow:0 0 8px var(--g500)}
+.dot.warn{background:var(--vip);box-shadow:0 0 8px var(--vip)}
+
+/* 布局 */
+.wrap{display:grid;grid-template-columns:168px 1fr;min-height:calc(100vh - 58px)}
+aside{background:var(--bg1);border-right:1px solid var(--line);padding:14px 10px;display:flex;flex-direction:column;gap:4px}
+.nav{display:flex;align-items:center;gap:9px;padding:9px 12px;border-radius:9px;color:var(--t1);font-size:13.5px;text-align:left;width:100%;transition:.15s}
+.nav:hover{background:var(--bg2);color:var(--t0)}
+.nav.on{background:var(--bg3);color:var(--g300);font-weight:600}
+.nav b{margin-left:auto;font-size:11.5px;color:var(--t2);font-weight:600}
+main{padding:18px;max-width:100%;min-width:0}
+h2{margin:0 0 14px;font-size:17px;font-weight:700}
+h3{margin:0 0 9px;font-size:14px;font-weight:650;color:var(--g300)}
+.muted{color:var(--t2);font-size:12.5px}
+
+/* 卡片 / 统计 */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:11px;margin-bottom:16px}
+.card{background:var(--bg1);border:1px solid var(--line);border-radius:var(--r);padding:13px 15px}
+.card .k{color:var(--t2);font-size:12px;margin-bottom:3px}
+.card .v{font-size:22px;font-weight:700;letter-spacing:.5px}
+.card .v small{font-size:12px;color:var(--t2);font-weight:500;margin-left:5px}
+.panel{background:var(--bg1);border:1px solid var(--line);border-radius:var(--r);padding:15px;margin-bottom:14px}
+
+/* 表格 */
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{text-align:left;color:var(--t2);font-weight:600;font-size:12px;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap;position:sticky;top:0;background:var(--bg1)}
+.tbl td{padding:9px 10px;border-bottom:1px solid rgba(255,255,255,.045);vertical-align:middle}
+.tbl tr:hover td{background:rgba(255,255,255,.022)}
+.tbl .num{font-variant-numeric:tabular-nums;color:var(--t1)}
+.tbl .who{display:flex;align-items:center;gap:8px}
+.av{width:26px;height:26px;border-radius:50%;background:var(--bg3);display:grid;place-items:center;font-size:12px;color:var(--g300);font-weight:600;flex:none}
+.tblwrap{max-height:calc(100vh - 260px);overflow:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--bg1)}
+.tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:var(--r-pill);border:1px solid var(--line);color:var(--t1);background:var(--bg2)}
+.tag.g{color:var(--g300);border-color:var(--g700)}
+.tag.v{color:var(--vip);border-color:#5a4a1e}
+.tag.d{color:var(--danger);border-color:#5a2b2b}
+.tag.w{color:#e0a458;border-color:#5c4522}
+.mono{font-family:ui-monospace,Consolas,monospace;font-size:11.5px}
+
+/* 控件 */
+.bar{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.btn{background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:7px 13px;font-size:13px;color:var(--t0);transition:.15s}
+.btn:hover{background:var(--bg3);border-color:var(--g700)}
+.btn.pri{background:var(--g700);border-color:var(--g600);color:#fff;font-weight:600}
+.btn.pri:hover{background:var(--g600)}
+.btn.dgr{color:var(--danger);border-color:#5a2b2b}
+.btn.dgr:hover{background:#3a1c1c}
+.btn.sm{padding:4px 9px;font-size:12px;border-radius:7px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.chk{display:inline-flex;align-items:center;gap:6px;color:var(--t1);font-size:12.5px;cursor:pointer}
+.pager{display:flex;gap:7px;align-items:center;justify-content:center;padding:12px;color:var(--t2);font-size:12.5px}
+
+/* 抽屉 */
+.mask{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:50;display:none}
+.mask.on{display:block}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(560px,94vw);background:var(--bg1);border-left:1px solid var(--line);z-index:51;transform:translateX(101%);transition:.22s;display:flex;flex-direction:column}
+.drawer.on{transform:none}
+.dhead{padding:15px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px}
+.dbody{padding:16px 18px;overflow:auto;flex:1}
+.field{display:grid;grid-template-columns:78px 1fr;gap:10px;align-items:center;margin-bottom:10px}
+.field label{color:var(--t2);font-size:12.5px}
+.mini{max-height:230px;overflow:auto;border:1px solid var(--line);border-radius:8px}
+.mini .it{padding:7px 11px;border-bottom:1px solid rgba(255,255,255,.045);display:flex;gap:9px;align-items:center;font-size:12.5px}
+.mini .it:last-child{border-bottom:0}
+.mini .it .n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* 弹窗 */
+.modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-46%);width:min(430px,92vw);background:var(--bg1);border:1px solid var(--line);border-radius:14px;z-index:61;padding:18px;display:none;box-shadow:0 18px 50px rgba(0,0,0,.6)}
+.modal.on{display:block}
+.modal h4{margin:0 0 8px;font-size:15px}
+.modal .acts{display:flex;gap:9px;justify-content:flex-end;margin-top:16px}
+pre.rep{background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:10px;max-height:260px;overflow:auto;font-size:12px;line-height:1.7;margin:0;white-space:pre-wrap}
+.empty{padding:38px;text-align:center;color:var(--t2);font-size:13px}
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(80px);background:var(--bg3);border:1px solid var(--g700);color:var(--t0);padding:10px 18px;border-radius:var(--r-pill);font-size:13px;z-index:80;opacity:0;transition:.25s;pointer-events:none;max-width:80vw}
+.toast.on{transform:translateX(-50%);opacity:1}
+.toast.err{border-color:var(--danger);color:#ffd9d9}
+.hide{display:none!important}
+.note{background:var(--bg2);border:1px solid var(--line);border-left:3px solid var(--vip);border-radius:8px;padding:10px 13px;font-size:12.5px;color:var(--t1);margin-bottom:13px}
+.note b{color:var(--vip)}
+.srcrow{display:flex;align-items:center;gap:10px;padding:9px 11px;border:1px solid var(--line);border-radius:9px;background:var(--bg2);margin-bottom:7px;font-size:13px}
+.srcrow .m{margin-left:auto;color:var(--t2);font-size:12px}
+@media (max-width:720px){
+  .wrap{grid-template-columns:1fr}
+  aside{flex-direction:row;overflow:auto;border-right:0;border-bottom:1px solid var(--line)}
+  .nav{width:auto;white-space:nowrap}
+  main{padding:13px}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo"><i></i>YMusic 账号管理台</div>
+  <div class="pill" id="stMain"><span class="dot" id="dotMain"></span><span id="txtMain">检测主服务…</span></div>
+  <div class="spacer"></div>
+  <select id="srcSel" style="min-width:210px"></select>
+  <label class="chk" title="默认打码显示，需要核对时再打开"><input type="checkbox" id="fullPhone">显示完整手机号</label>
+<label class="muted" style="display:inline-flex;align-items:center;gap:5px;font-size:12px"><input type="checkbox" id="onlyOnline"> 只看在线</label>
+      <button class="btn sm" id="btnRefresh">刷新</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <button class="nav on" data-v="overview">概览</button>
+    <button class="nav" data-v="users">账号<span id="nUsers"></span></button>
+    <button class="nav" data-v="merge">归集 / 同号合并</button>
+    <button class="nav" data-v="access">白名单 · 会话</button>
+    <button class="nav" data-v="backup">备份 · 日志</button>
+    <button class="nav" data-v="ota">发布更新</button>
+    <button class="nav" data-v="audits">音频审核<span id="nAudit"></span></button>
+  </aside>
+
+  <main>
+    <!-- 概览 -->
+    <section id="v-overview">
+      <h2>概览</h2>
+      <div class="cards" id="cards"></div>
+      <div class="panel">
+        <h3>数据源</h3>
+        <div id="srcList"></div>
+        <div class="muted" style="margin-top:9px">同一份账号体系可能被多个发行版各存一份，上面列出全部位置。带「主」标记的是手机端正在用的那份。</div>
+      </div>
+      <div class="note" id="liveNote"></div>
+      <div class="panel">
+        <h3>让 PC 端以后不再分裂</h3>
+        <div class="muted" style="margin-bottom:10px">生成一个启动器：PC 端的 exe 用 <code>YM_APP_DIR</code> 指向手机端这份数据目录，两边读写同一个 users.json，从根上不用再合并。</div>
+        <button class="btn" id="btnUnify">生成「统一数据目录启动器.bat」</button>
+      </div>
+    </section>
+
+    <!-- 账号 -->
+    <section id="v-users" class="hide">
+      <h2>账号</h2>
+      <div class="bar">
+        <input id="q" placeholder="搜昵称 / 手机号 / 邮箱 / UID" style="width:260px">
+        <select id="sortSel">
+          <option value="lastLogin">按最后登录</option>
+          <option value="createdAt">按注册时间</option>
+          <option value="fav">按收藏数</option>
+          <option value="history">按历史数</option>
+          <option value="name">按昵称</option>
+        </select>
+        <div class="spacer"></div>
+        <button class="btn" id="btnDedupe">整理本源同号</button>
+        <button class="btn" id="btnExportCsv">导出 CSV</button>
+        <button class="btn" id="btnExportJson">导出 JSON</button>
+      </div>
+      <div class="tblwrap">
+        <table class="tbl">
+          <thead><tr>
+            <th>账号</th><th>在线状态</th><th>手机</th><th>邮箱</th><th>性别</th><th>登录</th>
+            <th>注册端</th><th>最后登录设备</th>
+            <th>收藏</th><th>历史</th><th>注册</th><th>最后登录</th><th style="text-align:right">操作</th>
+          </tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+        <div id="emptyBox" class="empty hide">没有匹配的账号</div>
+      </div>
+      <div class="pager">
+        <button class="btn sm" id="pPrev">上一页</button>
+        <span id="pInfo"></span>
+        <button class="btn sm" id="pNext">下一页</button>
+      </div>
+    </section>
+
+    <!-- 归集 -->
+    <section id="v-merge" class="hide">
+      <h2>归集 / 同号合并</h2>
+      <div class="note">
+        <b>规则：</b>同手机号视为同一个人（其次同邮箱、再其次同 UID）。
+        合并时<b>保留方的登录凭证（密码 / 手机 / 邮箱）不会被覆盖</b>；只有空字段才从对方补齐；
+        收藏和历史做<b>并集</b>，同 key 保留时间更新的那条 —— 不会丢数据。
+      </div>
+      <div class="panel">
+        <h3>1. 选择要归集的源 → 目标源</h3>
+        <div id="mergeFrom"></div>
+        <div style="margin:12px 0 6px;color:var(--t2);font-size:12.5px">归集到</div>
+        <div id="mergeTo"></div>
+      </div>
+      <div class="panel">
+        <h3>2. 冲突时以谁为准</h3>
+        <div class="bar">
+          <label class="chk"><input type="radio" name="keep" value="src" checked>目标源优先（<b>推荐</b>：保留手机端登录信息）</label>
+          <label class="chk"><input type="radio" name="keep" value="lastLogin">最近登录的那条</label>
+          <label class="chk"><input type="radio" name="keep" value="created">最早注册的那条</label>
+          <label class="chk"><input type="checkbox" id="dedupeSrc">同时整理目标源内部的同号账号</label>
+        </div>
+        <div class="bar">
+          <button class="btn pri" id="btnPreview">先预览（不落盘）</button>
+          <button class="btn" id="btnDoMerge" disabled>确认执行</button>
+          <span class="muted" id="mergeHint">预览后可确认执行；执行前会自动备份。</span>
+        </div>
+      </div>
+      <div class="panel hide" id="repBox">
+        <h3>合并报告</h3>
+        <div id="repSum" class="muted" style="margin-bottom:8px"></div>
+        <pre class="rep" id="repBody"></pre>
+      </div>
+    </section>
+
+    <!-- 白名单 / 会话 -->
+    <section id="v-access" class="hide">
+      <h2>白名单 · 会话</h2>
+      <div class="panel">
+        <h3>登录白名单（一行一个邮箱）</h3>
+        <div class="muted" style="margin-bottom:8px">留空 = 不限制任何人都能注册。因为服务挂在公网隧道上，建议至少填上自己的邮箱。</div>
+        <textarea id="wl" rows="4" style="width:100%;font-family:ui-monospace,Consolas,monospace"></textarea>
+        <div class="bar" style="margin-top:9px"><button class="btn pri" id="btnWl">保存白名单</button></div>
+      </div>
+      <div class="panel">
+        <h3>管理端端口</h3>
+        <div class="muted" style="margin-bottom:8px">
+          管理台只监听本机，端口可自行分配。电脑上同时开着脚本版和 exe 版时，给它们各指一个端口就不会互相抢。
+        </div>
+        <div class="bar" style="align-items:center">
+          <input id="adminPort" type="number" min="1024" max="65535"
+                 style="width:120px;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--bg2);color:var(--fg)">
+          <button class="btn pri" id="btnPort">保存并重启</button>
+          <span class="muted" id="portState">—</span>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>会话</h3>
+        <div class="bar">
+          <button class="btn sm" id="btnSess">刷新</button>
+          <button class="btn sm dgr" id="btnKickAll">踢掉全部在线</button>
+          <span class="muted">踢下线后对方需要重新登录；合并账号后旧会话会失效，属正常现象。</span>
+        </div>
+        <div class="tblwrap" style="max-height:340px">
+          <table class="tbl"><thead><tr><th>账号</th><th>令牌</th><th>过期</th><th>状态</th><th style="text-align:right">操作</th></tr></thead>
+          <tbody id="sessRows"></tbody></table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 备份 / 日志 -->
+    <section id="v-backup" class="hide">
+      <h2>备份 · 日志</h2>
+      <div class="note">每次改动前都会自动备份到 <code>admin/backups/</code>。误删、误合并都能从这里回滚。</div>
+      <div class="panel">
+        <h3>备份</h3>
+        <div id="bakList"></div>
+      </div>
+      <div class="panel">
+        <h3>操作日志</h3>
+        <pre class="rep" id="logBody"></pre>
+      </div>
+    </section>
+
+    <!-- 发布更新 -->
+    <section id="v-ota" class="hide">
+      <h2>发布更新</h2>
+      <div class="note">
+        把当前工程里的前端（<code>web/</code>）打成一个版本推给所有已安装的 exe。
+        对方会在<b>下次启动或 30 分钟内自动拉取</b>并生效，<b>不用重发 80MB 安装包</b>。<br>
+        <b>能更新：</b>界面、交互、前端逻辑。<b>不能更新：</b>服务端接口 —— 那是内嵌在 exe 里的，改了必须重新打包。
+      </div>
+      <div class="panel">
+        <h3>当前状态</h3>
+        <div id="otaState" class="muted">加载中…</div>
+      </div>
+      <div class="panel">
+        <h3>发布新版本</h3>
+        <div class="muted" style="margin-bottom:6px">更新源地址 —— exe 回来拉更新的地方。隧道换地址后必须改这里重新发一版，否则老用户会失联。</div>
+        <input id="otaBase" placeholder="https://xxx.trycloudflare.com" style="width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--bg2);color:var(--fg)">
+        <div class="muted" style="margin:9px 0 6px">版本号（留空自动顺延）</div>
+        <input id="otaVer" placeholder="例如 3.5.5" style="width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--bg2);color:var(--fg)">
+        <div class="muted" style="margin:9px 0 6px">更新说明（逐条显示给用户，一行一条）</div>
+        <textarea id="otaNote" rows="4" placeholder="新增歌词逐行高亮&#10;修复下载偶尔中断&#10;播放页支持左右滑切换" style="width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--bg2);color:var(--fg);resize:vertical;line-height:1.6"></textarea>
+        <div class="muted" style="font-size:12px;margin-top:4px">第一行会作为摘要，其余按条列在弹窗里</div>
+        <label class="muted" style="display:flex;align-items:center;gap:6px;margin-top:9px">
+          <input type="checkbox" id="otaForce"> 强制更新（用户不能点「稍后」，更新完才能继续用）
+        </label>
+        <div class="bar" style="margin-top:10px">
+          <button class="btn pri" id="btnOtaPub">发布这一版</button>
+          <button class="btn sm" id="btnOtaRoll">回滚到上一版</button>
+          <button class="btn sm" id="btnOtaRefresh">刷新</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>安卓客户端（APK）</h3>
+        <div id="otaApkState" class="muted">加载中…</div>
+        <div class="muted" style="margin:10px 0 6px">选择 APK 文件（先用 <code>build-apk.py</code> 生成）</div>
+        <input type="file" id="otaApkFile" accept=".apk,application/vnd.android.package-archive"
+               style="width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--bg2);color:var(--fg)">
+        <div class="bar" style="margin-top:8px;gap:8px;flex-wrap:wrap">
+          <input id="otaApkVer" placeholder="版本号 如 1.0.1" style="flex:1;min-width:120px;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--bg2);color:var(--fg)">
+          <input id="otaApkCode" type="number" min="1" placeholder="版本序号 如 2" style="flex:1;min-width:120px;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--bg2);color:var(--fg)">
+        </div>
+        <div class="muted" style="margin:9px 0 6px">手机端看到的安装提示</div>
+        <input id="otaApkNote" placeholder="例如：修复安卓 14 上的闪退" style="width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--bg2);color:var(--fg)">
+        <label class="muted" style="display:flex;align-items:center;gap:6px;margin-top:9px">
+          <input type="checkbox" id="otaApkForce"> 强制更新
+        </label>
+        <div class="bar" style="margin-top:10px">
+          <button class="btn pri" id="btnOtaApk">上传并发布 APK</button>
+        </div>
+        <div class="note" style="margin-top:10px">
+          手机端每次启动会比对<b>版本序号</b>，比它大就弹窗提示安装。序号必须递增，否则用户收不到。
+          日常加功能只要发上面那个「前端版本」就够了，<b>不用重发 APK</b> —— 界面同样会更新。
+        </div>
+      </div>
+      <div class="panel">
+        <h3>文件清单</h3>
+        <div class="tblwrap"><table class="tbl">
+          <thead><tr><th>文件</th><th style="text-align:right">大小</th><th>已发布版本</th><th>当前工程</th><th>状态</th></tr></thead>
+          <tbody id="otaFiles"></tbody>
+        </table></div>
+      </div>
+      <div class="panel">
+        <h3>发消息 / 公告</h3>
+        <div class="muted" style="margin-bottom:8px">写一条推给所有人，用户 App 里的消息中心会亮红点。</div>
+        <input id="noticeTitle" placeholder="标题，例如：服务器维护通知" style="width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--bg2);color:var(--fg)">
+        <div class="muted" style="margin:9px 0 6px">正文</div>
+        <textarea id="noticeBody" rows="3" placeholder="今晚 23:00-23:30 服务器维护，期间可能无法听歌" style="width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--bg2);color:var(--fg);resize:vertical;line-height:1.6"></textarea>
+        <div class="muted" style="margin:9px 0 6px">要点（可选，一行一条）</div>
+        <textarea id="noticePoints" rows="3" placeholder="维护期间已下载的歌照常能听&#10;维护完自动恢复" style="width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--bg2);color:var(--fg);resize:vertical;line-height:1.6"></textarea>
+        <label class="muted" style="display:flex;align-items:center;gap:6px;margin-top:9px">
+          <input type="checkbox" id="noticeTop"> 置顶
+        </label>
+        <div class="bar" style="margin-top:10px">
+          <button class="btn pri" id="btnNoticePost">推送消息</button>
+        </div>
+        <div style="margin-top:14px" id="noticeList"></div>
+      </div>
+    </section>
+    <section id="v-audits" class="hide">
+      <div class="panel">
+        <h3>用户上传的音频</h3>
+        <div class="muted" style="margin-bottom:9px">
+          用户传上来的歌先落在「待审核」，通过之后才会出现在公开曲库和别人的主页里。
+          驳回可以填理由，用户能在「我的上传」里看到。
+        </div>
+        <div class="bar" style="margin-bottom:10px">
+          <button class="btn sm" data-au="pending">待审核</button>
+          <button class="btn sm" data-au="approved">已通过</button>
+          <button class="btn sm" data-au="rejected">未通过</button>
+          <button class="btn sm" data-au="">全部</button>
+          <button class="btn sm" id="btnAuRefresh">刷新</button>
+        </div>
+        <div id="auditList"></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- 详情抽屉 -->
+<div class="mask" id="mask"></div>
+<aside class="drawer" id="drawer">
+  <div class="dhead">
+    <div class="av" id="dAv">–</div>
+    <div style="flex:1;min-width:0">
+      <div id="dName" style="font-weight:700">–</div>
+      <div class="muted" id="dUid" style="font-size:11.5px">–</div>
+      <div id="dRole" style="font-size:11.5px"></div>
+    </div>
+    <button class="btn sm" id="dClose">关闭</button>
+  </div>
+  <div class="dbody">
+    <h3>资料</h3>
+    <div class="field"><label>昵称</label><input id="fName"></div>
+    <div class="field"><label>手机号</label><input id="fPhone"></div>
+    <div class="field"><label>邮箱</label><input id="fEmail"></div>
+    <div class="field"><label>性别</label>
+      <select id="fGender"><option value="">未填</option><option value="male">男</option><option value="female">女</option></select>
+    </div>
+    <div class="bar">
+      <button class="btn pri" id="btnSave">保存资料</button>
+      <button class="btn" id="btnPass">重置密码</button>
+      <button class="btn" id="btnRole">设为管理员</button>
+      <button class="btn" id="btnTransfer" style="display:none">转让开发者身份</button>
+      <button class="btn dgr" id="btnDel">删除账号</button>
+    </div>
+    <div class="muted" style="margin-top:4px">重置密码不会动收藏和历史；删除账号不可逆（会自动备份）。</div>
+
+    <h3 style="margin-top:20px">收藏 <span class="muted" id="cFav"></span></h3>
+    <div class="mini" id="listFav"></div>
+    <h3 style="margin-top:16px">播放历史 <span class="muted" id="cHis"></span></h3>
+    <div class="mini" id="listHis"></div>
+    <h3 style="margin-top:16px">会话 <span class="muted" id="cSess"></span></h3>
+    <div class="mini" id="listSess"></div>
+    <div style="height:20px"></div>
+  </div>
+</aside>
+
+<!-- 通用弹窗 -->
+<div class="modal" id="modal">
+  <h4 id="mTitle"></h4>
+  <div id="mBody" style="font-size:13px;color:var(--t1)"></div>
+  <div id="mInput" class="hide" style="margin-top:10px"><input id="mVal" style="width:100%"></div>
+  <div class="acts">
+    <button class="btn" id="mCancel">取消</button>
+    <button class="btn pri" id="mOk">确定</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const state = { src:'all', rows:[], page:1, per:20, q:'', sort:'lastLogin', full:false, cur:null, curSrc:null, mergePreview:null };
+
+async function api(path, opt){ const r = await fetch(path, opt); return await r.json(); }
+function toast(msg, err){ const t=$('#toast'); t.textContent=msg; t.className='toast on'+(err?' err':''); clearTimeout(t._t); t._t=setTimeout(()=>t.className='toast'+(err?' err':''),2600); }
+const dt = n => n ? new Date(n).toLocaleString('zh-CN',{hour12:false}).replace(/\//g,'-') : '—';
+const esc = s => String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ---------- 弹窗 ---------- */
+let mResolve=null;
+function ask(title, body, {input=false, okText='确定', danger=false, value=''}={}){
+  return new Promise(res=>{
+    $('#mTitle').textContent=title; $('#mBody').innerHTML=body;
+    $('#mInput').classList.toggle('hide',!input);
+    $('#mVal').value=value||''; $('#mVal').type = /密码|pass/i.test(title) ? 'password':'text';
+    $('#mOk').textContent=okText; $('#mOk').className='btn '+(danger?'dgr':'pri');
+    $('#modal').classList.add('on'); mResolve=res; if(input) setTimeout(()=>$('#mVal').focus(),60);
+  });
+}
+function closeModal(v){ $('#modal').classList.remove('on'); if(mResolve){mResolve(v);mResolve=null;} }
+$('#mOk').onclick=()=>closeModal($('#mInput').classList.contains('hide') ? true : $('#mVal').value);
+$('#mCancel').onclick=()=>closeModal(null);
+$('#modal').onclick=e=>{ if(e.target.id==='modal') closeModal(null); };
+
+/* ---------- 导航 ---------- */
+const VIEWS=['overview','users','merge','access','backup','ota','audits'];
+function go(v){
+  if(!VIEWS.includes(v)) v='overview';
+  $$('.nav').forEach(x=>x.classList.toggle('on', x.dataset.v===v));
+  VIEWS.forEach(x=>$('#v-'+x).classList.toggle('hide', x!==v));
+  if(location.hash!=='#'+v) history.replaceState(null,'','#'+v);
+  if(v==='access') loadAccess(); if(v==='access') loadPort();
+  if(v==='backup') loadBackup();
+  if(v==='ota'){ loadOta(); if(typeof loadNotice==='function') loadNotice(); }
+  if(v==='audits') loadAudits();
+}
+$$('.nav').forEach(b=>b.onclick=()=>go(b.dataset.v));
+window.addEventListener('hashchange',()=>go(location.hash.slice(1)));
+
+/* ---------- 概览 ---------- */
+async function loadState(){
+  const s = await api('/api/state');
+  if(!s.ok) return toast('读取失败', true);
+  state.srcs = s.sources;
+  const live = (s.mains||[]).filter(m=>m.up);
+  $('#dotMain').className = 'dot' + (live.length ? ' on' : '');
+  $('#txtMain').textContent = live.length ? ('主服务在线 ' + live.map(m=>m.port).join('/')) : '主服务未运行';
+  /* 目录联接会让好几个源指向同一份数据，统计只算不重复的那些 */
+  const uniq = s.sources.filter(x=>!x.linked);
+  const total = uniq.reduce((a,x)=>a+x.count,0);
+  const fav = uniq.reduce((a,x)=>a+x.favTotal,0);
+  const his = uniq.reduce((a,x)=>a+x.historyTotal,0);
+  const pass = uniq.reduce((a,x)=>a+x.withPass,0);
+  const sess = uniq.reduce((a,x)=>a+x.activeSessions,0);
+  $('#cards').innerHTML = [
+    ['账号总数', total, ''], ['有密码', pass, '/'+total], ['收藏合计', fav, '条'],
+    ['历史合计', his, '条'], ['在线会话', sess, '个'],
+    ['数据源', uniq.length + (s.sources.length-uniq.length ? '+' + (s.sources.length-uniq.length) + '联接' : ''), '个']
+  ].map(([k,v,u])=>`<div class="card"><div class="k">${k}</div><div class="v">${v}${u?`<small>${u}</small>`:''}</div></div>`).join('');
+
+  $('#srcList').innerHTML = s.sources.map(x=>`
+    <div class="srcrow">
+      <span class="tag ${x.main?'g':''}">${x.main?'主':(x.linked?'联接':'副本')}</span>
+      <div style="min-width:0">
+        <div style="font-weight:600">${esc(x.name)}</div>
+        <div class="muted" style="font-size:11.5px;word-break:break-all">${esc(x.dir)}</div>
+        ${x.linked?`<div class="muted" style="font-size:11.5px">⚡ 已联接 ⇒ ${esc((s.sources.find(y=>y.id===x.linked)||{}).name||x.linked)}（同一份数据，统计不重复计入）</div>`:''}
+      </div>
+      <div class="m">${x.exists? x.count+' 个账号 · '+new Date(x.mtime).toLocaleString('zh-CN',{hour12:false}) : '无数据文件'}</div>
+    </div>`).join('');
+
+  const main = s.sources.find(x=>x.main) || s.sources[0];
+  $('#liveNote').innerHTML = live.length
+    ? `主服务正在 <b>${live.map(m=>m.port).join('、')}</b> 端口运行，账号文件由它持有。管理台的改动会直接写入同一份文件；
+       已给主服务加了文件热重载（下次重启主服务后生效），所以改完基本能立刻对上，不必重启、也不会打断手机端。`
+    : `当前没检测到主服务。管理台依然可以直接改文件，改动会在主服务下次启动时生效。`;
+
+  // 源下拉 + 归集清单
+  const sel=$('#srcSel'), keepNow = state.src;
+  sel.innerHTML = '<option value="all">全部源（汇总）</option>' + s.sources.map(x=>`<option value="${x.id}">${esc(x.name)} — ${x.count} 个</option>`).join('');
+  sel.value = [...sel.options].some(o=>o.value===keepNow) ? keepNow : 'all';
+  state.src = sel.value;
+
+  /* 已联接的源和目标源是同一份数据，不能拿来归集（等于自己合并自己） */
+  const froms = s.sources.filter(x=>!x.linked);
+  $('#mergeFrom').innerHTML = froms.length ? froms.map(x=>`
+    <label class="chk" style="display:flex;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg2);margin-bottom:6px">
+      <input type="checkbox" class="mf" value="${x.id}"><span>${esc(x.name)} — ${x.count} 个</span>
+    </label>`).join('')
+    : '<div class="muted">各发行版已通过目录联接指向同一份账号库，没有需要归集的独立副本。</div>';
+  $('#mergeTo').innerHTML = s.sources.map(x=>`
+    <label class="chk" style="display:flex;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg2);margin-bottom:6px">
+      <input type="radio" name="mto" value="${x.id}" ${x.main?'checked':''}><span>${esc(x.name)} — ${x.count} 个</span>
+    </label>`).join('');
+  $('#nUsers').textContent = total ? ' ' + total : '';
+}
+
+/* ---------- 账号列表 ---------- */
+async function loadUsers(){
+  const u = `/api/users?src=${encodeURIComponent(state.src)}&q=${encodeURIComponent(state.q)}&sort=${state.sort}&full=${state.full?1:0}`;
+  const r = await api(u);
+  if(!r.ok) return toast('读取失败', true);
+  state.rows = r.rows;
+  renderRows();
+}
+/* 注册端 / 登录设备标签。
+ * unknown = 这段数据是旧版本或 exe 本地服务写入的，没有来源字段（exe 内嵌代码改不了），
+ * 统一显示成「未标记·本地客户端」，不假装知道它是手机还是电脑。 */
+const SRC_TXT={mobile:'手机端',pc:'电脑端',desktop:'桌面客户端',unknown:'未标记'};
+function srcTag(kind, dev){
+  const k=kind||'unknown';
+  const cls = k==='mobile' ? 'g' : k==='unknown' ? 'd' : '';
+  const sub = dev || (k==='unknown' ? '本地客户端' : '');
+  return `<span class="tag ${cls}">${esc(SRC_TXT[k]||'未标记')}</span>`
+       + (sub ? `<div class="muted" style="font-size:11px;margin-top:2px">${esc(sub)}</div>` : '');
+}
+/* 真实在线：管理端看的是心跳本身，隐身也算在线，只是额外标一个「隐身」。 */
+function dur(ms){
+  ms = Number(ms)||0;
+  const m = Math.floor(ms/60000);
+  if(m < 60) return m + ' 分钟';
+  const h = Math.floor(m/60);
+  return h + ' 小时 ' + (m%60) + ' 分';
+}
+function onlineCell(r){
+  let tag, sub;
+  if(r.online && r.hidden){
+    tag = '<span class="tag w">隐身</span>';
+    sub = '真实在线 · ' + (r.device||'未知设备');
+  } else if(r.online){
+    tag = '<span class="tag g">在线</span>';
+    sub = (r.device||'未知设备') + (r.song ? ' · 在听《' + esc(r.song.name) + '》' : '');
+  } else {
+    tag = '<span class="tag d">离线</span>';
+    sub = r.lastSeen ? ('最后活动 ' + dt(r.lastSeen)) : '从未上报';
+  }
+  let html = '<div>' + tag + '</div>'
+           + '<div class="muted" style="font-size:11px;margin-top:2px">' + esc(sub) + '</div>';
+  if(r.totalMs) html += '<div class="muted" style="font-size:11px">今日 ' + dur(r.todayMs) + ' · 累计 ' + dur(r.totalMs) + '</div>';
+  return html;
+}
+function renderRows(){
+  let rows=state.rows, per=state.per;
+  if($('#onlyOnline') && $('#onlyOnline').checked) rows=rows.filter(r=>r.online);
+  const pages=Math.max(1,Math.ceil(rows.length/per));
+  if(state.page>pages) state.page=pages;
+  const slice=rows.slice((state.page-1)*per, state.page*per);
+  $('#rows').innerHTML = slice.map(r=>`
+    <tr>
+      <td><div class="who"><div class="av">${esc((r.username||'听').slice(0,1))}</div>
+        <div style="min-width:0"><div style="font-weight:600">${esc(r.username)}</div>
+        <div class="muted" style="font-size:11px">${esc(r.uid)}</div></div></div></td>
+      <td>${onlineCell(r)}</td>
+      <td class="num">${esc(r.phone||'—')}</td>
+      <td class="num" style="font-size:12px">${esc(r.email||'—')}</td>
+      <td>${r.gender==='female'?'女':r.gender==='male'?'男':'—'}</td>
+      <td>${r.hasPass?'<span class="tag g">已设密码</span>':'<span class="tag d">无密码</span>'}</td>
+      <td>${srcTag(r.regSrc,r.regDevice)}</td>
+      <td>${srcTag(r.lastSrc,r.lastDevice)}</td>
+      <td class="num">${r.favCount}</td>
+      <td class="num">${r.historyCount}</td>
+      <td class="num" style="font-size:12px">${dt(r.createdAt)}</td>
+      <td class="num" style="font-size:12px">${dt(r.lastLogin)}</td>
+      <td style="text-align:right;white-space:nowrap">
+        <button class="btn sm" data-open="${r.uid}" data-src="${r.src}">详情</button>
+        <button class="btn sm dgr" data-del="${r.uid}" data-src="${r.src}">删除</button>
+      </td>
+    </tr>`).join('');
+  $('#emptyBox').classList.toggle('hide', rows.length>0);
+  $('#pInfo').textContent = rows.length ? `第 ${state.page} / ${pages} 页 · 共 ${rows.length} 个` : '';
+  $$('[data-open]').forEach(b=>b.onclick=()=>openUser(b.dataset.src,b.dataset.open));
+  $$('[data-del]').forEach(b=>b.onclick=async()=>{
+    const r=state.rows.find(x=>x.uid===b.dataset.del);
+    const ok=await ask('删除账号','确定删除 <b>'+esc(r.username)+'</b>（'+(r.phone||'无手机号')+'）？<br>收藏 '+r.favCount+' 条、历史 '+r.historyCount+' 条将一并消失。删除前会自动备份。',{danger:true,okText:'确认删除'});
+    if(!ok) return;
+    const res=await api('/api/user/del',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({src:b.dataset.src,uid:b.dataset.del})});
+    toast(res.ok?`已删除，备份 ${res.backup}`:('删除失败：'+res.error), !res.ok);
+    loadUsers(); loadState();
+  });
+}
+
+/* ---------- 详情抽屉 ---------- */
+async function openUser(src, uid){
+  const r = await api(`/api/user?src=${encodeURIComponent(src)}&uid=${encodeURIComponent(uid)}`);
+  if(!r.ok) return toast('读取失败：'+r.error, true);
+  state.cur=r.user; state.curSrc=src;
+  const u=r.user;
+  $('#dAv').textContent=(u.username||'听').slice(0,1);
+  paintRole(u);
+  $('#dName').textContent=u.username; $('#dUid').textContent=u.uid+' · '+u.srcName;
+  $('#fName').value=u.username; $('#fPhone').value=u.phoneRaw; $('#fEmail').value=u.email; $('#fGender').value=u.gender;
+  const li=(arr)=>arr.length? arr.slice(0,200).map(x=>`<div class="it"><div class="n">${esc(x.name)}${x.artist?` <span class="muted">— ${esc(x.artist)}</span>`:''}</div><span class="muted" style="font-size:11px">${dt(x.at)}</span></div>`).join('') : '<div class="it muted">（空）</div>';
+  $('#listFav').innerHTML=li(r.favs); $('#listHis').innerHTML=li(r.history);
+  $('#cFav').textContent=r.favs.length+' 条'; $('#cHis').textContent=r.history.length+' 条';
+  $('#listSess').innerHTML=r.sessions.length? r.sessions.map(s=>`<div class="it"><div class="n">${esc(s.token)}</div><span class="tag ${s.alive?'g':''}">${s.alive?'在线':'已过期'}</span></div>`).join('') : '<div class="it muted">（无）</div>';
+  $('#cSess').textContent=r.sessions.length+' 个';
+  $('#mask').classList.add('on'); $('#drawer').classList.add('on');
+}
+function closeDrawer(){ $('#mask').classList.remove('on'); $('#drawer').classList.remove('on'); }
+
+/* ---------- 角色：开发者 / 管理员 / 普通用户 ---------- */
+function paintRole(u){
+  const box=$('#dRole'); const btn=$('#btnRole'); if(!box) return;
+  const r=u.role||'user'; const del=$('#btnDel'); const tr=$('#btnTransfer');
+  if(tr) tr.style.display = (r==='superadmin') ? 'none' : '';
+  if(r==='superadmin'){
+    box.innerHTML=`<span class="tag g">开发者</span> <span class="muted">不可降级、不可注销</span>
+    <div class="muted" style="font-size:11px;margin-top:2px">想换主账号：先把权限转给别人，自己就成了管理员</div>`;
+    if(btn){ btn.textContent='开发者'; btn.disabled=true; btn.style.opacity='.5'; }
+    if(del){ del.textContent='不可注销'; del.disabled=true; del.style.opacity='.5'; }
+  } else if(r==='admin'){
+    box.innerHTML=`<span class="tag w">管理员</span> <span class="muted">可审核、发公告、管账号，自己照常用 App</span>
+    <div class="muted" style="font-size:11px;margin-top:2px">可接手开发者（现任自动降为管理员）</div>`;
+    if(btn){ btn.textContent='撤销管理员'; btn.disabled=false; btn.style.opacity='1'; }
+    if(del){ del.textContent='注销账号'; del.disabled=false; del.style.opacity='1'; }
+  } else {
+    box.innerHTML='<span class="muted">普通用户</span>';
+    if(btn){ btn.textContent='设为管理员'; btn.disabled=false; btn.style.opacity='1'; }
+    if(del){ del.textContent='注销账号'; del.disabled=false; del.style.opacity='1'; }
+  }
+}
+$('#btnRole').onclick=async()=>{
+  const u=state.cur; if(!u) return;
+  if(u.role==='superadmin'){ toast('开发者账号不能改动', true); return; }
+  const make = u.role!=='admin';
+  const okc = await ask(make?'任命管理员':'撤销管理员',
+    make ? ('把 <b>'+esc(u.username)+'</b> 设为管理员？<br><span class="muted">TA 可以进管理台审核上传、发公告、管理账号，同时自己还是普通用户，App 照常用。</span>')
+         : ('取消 <b>'+esc(u.username)+'</b> 的管理员身份？<br><span class="muted">TA 还能正常用 App，只是进不了管理台。</span>'),
+    {okText: make?'任命':'撤销'});
+  if(!okc) return;
+  const r=await api('/api/user/role',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({src:state.curSrc, uid:u.uid, role: make?'admin':''})});
+  toast(r.ok ? (make?'已任命为管理员':'已撤销管理员') : ('失败：'+r.error), !r.ok);
+  if(r.ok){ state.cur.role=r.role; paintRole(state.cur); loadUsers(); loadState(); }
+};
+
+$('#dClose').onclick=closeDrawer; $('#mask').onclick=closeDrawer;
+
+$('#btnSave').onclick=async()=>{
+  const b={src:state.curSrc,uid:state.cur.uid,username:$('#fName').value,phone:$('#fPhone').value,email:$('#fEmail').value,gender:$('#fGender').value};
+  const r=await api('/api/user/edit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});
+  toast(r.ok?'已保存':'保存失败：'+r.error, !r.ok); if(r.ok){ loadUsers(); loadState(); }
+};
+$('#btnPass').onclick=async()=>{
+  const v=await ask('重置密码','输入新密码（至少 6 位）。留空并提交表示<b>清除密码</b>，该账号将只能用验证码登录。',{input:true,okText:'设置'});
+  if(v===null) return;
+  const body={src:state.curSrc,uid:state.cur.uid};
+  if(String(v).trim()==='') body.clear=true; else body.pass=String(v);
+  const r=await api('/api/user/pass',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  toast(r.ok?(body.clear?'已清除密码':'密码已重置'):('失败：'+r.error), !r.ok);
+};
+$('#btnTransfer').onclick=async()=>{
+  const u=state.cur; if(!u) return;
+  if(u.role==='superadmin'){ toast('它已经是开发者了', true); return; }
+  const okc = await ask('转让开发者身份',
+    '把开发者身份交给 <b>'+esc(u.username)+'</b>？<br><br>'
+    + '<span class="muted">转让后：TA 成为开发者（不可被注销、可任命/撤销管理员）；'
+    + '现任开发者自动降为<b>管理员</b>，之后就可以被注销了。改动前会自动备份。</span>',
+    {okText:'确认转让'});
+  if(!okc) return;
+  const r=await api('/api/user/transfer',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({src:state.curSrc, uid:u.uid})});
+  if(!r.ok){ toast('转让失败：'+r.error, true); return; }
+  toast('已转让给 '+u.username);
+  closeDrawer(); loadUsers(); loadState();
+};
+$('#btnDel').onclick=async()=>{
+  const u=state.cur;
+  if(u.role==='superadmin'){ toast('开发者账号不可注销', true); return; }
+  const ok=await ask('删除账号','确定注销 <b>'+esc(u.username)+'</b>（'+u.phoneRaw+'）？<br><span class="muted">会连根清掉：好友关系、歌曲分享、音乐圈动态、一起听记录、在线状态、TA 上传的歌。删除前自动备份，可在「备份 · 日志」里回滚。</span>',{danger:true,okText:'确认删除'});
+  if(!ok) return;
+  const r=await api('/api/user/del',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({src:state.curSrc,uid:u.uid})});
+  toast(r.ok?'已删除':'失败：'+r.error, !r.ok); closeDrawer(); loadUsers(); loadState();
+};
+
+/* ---------- 归集 ---------- */
+$('#btnPreview').onclick=async()=>{
+  const from=$$('.mf:checked').map(x=>x.value);
+  const toEl=$$('[name=mto]:checked')[0];
+  if(!toEl) return toast('请选择目标源', true);
+  const keep=$$('[name=keep]:checked')[0].value;
+  const body={to:toEl.value, from, keep, dedupeSrc:$('#dedupeSrc').checked, preview:true};
+  const r=await api('/api/merge',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(!r.ok) return toast('预览失败：'+r.error, true);
+  state.mergePreview=body;
+  $('#repBox').classList.remove('hide');
+  $('#repSum').innerHTML = `将新增 <b>${r.added}</b> 个、合并 <b>${r.merged}</b> 个，执行后目标源共 <b>${r.total}</b> 个账号。登录凭证按「${keep==='src'?'目标源优先':keep==='created'?'最早注册':'最近登录'}」保留。`;
+  $('#repBody').textContent = r.detail.length ? r.detail.map(d=>
+    `[${d.action}] ${d.key||''} → 保留 ${d.keepUid}${d.dropUid?('（并入 '+d.dropUid+'）'):''}  ${d.nick||''}  收藏+${d.favAdd||0} 历史+${d.hisAdd||0}  ← ${d.where||''}`
+  ).join('\n') : '没有需要合并的账号（各源之间没有重复手机号）。';
+  $('#btnDoMerge').disabled = (r.added+r.merged)===0;
+  $('#mergeHint').textContent = (r.added+r.merged)===0 ? '没有可合并的内容。' : '确认无误后点「确认执行」。';
+};
+$('#btnDoMerge').onclick=async()=>{
+  if(!state.mergePreview) return;
+  const r=await api('/api/merge',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...state.mergePreview, preview:false})});
+  toast(r.ok?`完成：新增 ${r.added}、合并 ${r.merged}，备份 ${r.backup}`:('失败：'+r.error), !r.ok);
+  if(r.ok){ $('#btnDoMerge').disabled=true; state.mergePreview=null; loadState(); loadUsers(); }
+};
+
+/* ---------- 白名单 / 会话 ---------- */
+async function loadPort(){
+  try{
+    const r = await api('/api/port');
+    if(!r.ok) return;
+    $('#adminPort').value = r.saved || r.port;
+    $('#portState').textContent = '当前运行在 ' + r.port + (r.saved ? '（已保存：' + r.saved + '）' : '（未指定，默认 8803）');
+  }catch(e){ /* 忽略 */ }
+}
+$('#btnPort').onclick=async()=>{
+  const n = Number($('#adminPort').value);
+  if(!Number.isInteger(n) || n<1024 || n>65535){ toast('端口要填 1024–65535 之间的整数', true); return; }
+  const r = await api('/api/port',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({port:n})});
+  if(!r.ok){ toast('保存失败：'+r.error, true); return; }
+  if(!r.restarted){ toast('端口没变，不用重启'); return; }
+  toast('已保存，正在重启到 '+n+'…');
+  /* 给自己一点时间起来，再跳到新地址；万一没起来，退回原地址继续用。 */
+  setTimeout(()=>{ location.href = 'http://127.0.0.1:'+n; }, 2600);
+};
+
+async function loadAccess(){
+  const s = state.src==='all' ? (state.srcs||[]).find(x=>x.main) || (state.srcs||[])[0] : (state.srcs||[]).find(x=>x.id===state.src);
+  if(!s) return;
+  const w=await api('/api/whitelist?src='+encodeURIComponent(s.id));
+  $('#wl').value=(w.list||[]).join('\n');
+  $('#btnWl').dataset.src=s.id;
+  const r=await api('/api/sessions?src='+encodeURIComponent(s.id));
+  $('#sessRows').innerHTML=(r.rows||[]).map(x=>`
+    <tr><td>${esc(x.username)}</td><td class="num" style="font-size:12px">${esc(x.token)}</td>
+    <td class="num" style="font-size:12px">${dt(x.exp)}</td>
+    <td>${x.alive?'<span class="tag g">在线</span>':'<span class="tag">已过期</span>'}</td>
+    <td style="text-align:right"><button class="btn sm dgr" data-kick="${esc(x.full)}">踢下线</button></td></tr>`).join('')
+    || '<tr><td colspan="5" class="muted" style="text-align:center;padding:20px">暂无会话</td></tr>';
+  $$('[data-kick]').forEach(b=>b.onclick=async()=>{
+    const r2=await api('/api/sessions?src='+encodeURIComponent(s.id),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:b.dataset.kick})});
+    toast(r2.ok?`已踢下线 ${r2.kicked} 个`:'失败', !r2.ok); loadAccess();
+  });
+  $('#btnKickAll').onclick=async()=>{
+    const ok=await ask('踢掉全部在线会话','该源所有已登录设备都会被登出，需要重新登录。继续？',{danger:true,okText:'全部踢下线'});
+    if(!ok) return;
+    const r2=await api('/api/sessions?src='+encodeURIComponent(s.id),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({all:true})});
+    toast(r2.ok?`已踢下线 ${r2.kicked} 个`:'失败', !r2.ok); loadAccess();
+  };
+  $('#btnWl').onclick=async()=>{
+    const list=$('#wl').value.split(/[\n,，\s]+/).map(x=>x.trim()).filter(Boolean);
+    const r2=await api('/api/whitelist?src='+encodeURIComponent($('#btnWl').dataset.src),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({list})});
+    toast(r2.ok?`白名单已保存（${r2.list.length} 个）`:'保存失败', !r2.ok);
+    if(r2.list.length===0) toast('当前为空 = 不限制任何人注册', false);
+  };
+}
+
+/* ---------- 备份 / 日志 ---------- */
+async function loadBackup(){
+  const b=await api('/api/backups');
+  const main=(state.srcs||[]).find(x=>x.main)||(state.srcs||[])[0];
+  $('#bakList').innerHTML=(b.files||[]).map(f=>`
+    <div class="srcrow"><div style="min-width:0"><div style="font-size:12.5px">${esc(f.file)}</div>
+      <div class="muted" style="font-size:11.5px">${new Date(f.mtime).toLocaleString('zh-CN',{hour12:false})} · ${(f.size/1024).toFixed(1)} KB</div></div>
+      <div class="m"><button class="btn sm" data-re="${esc(f.file)}">回滚到此</button></div></div>`).join('')
+    || '<div class="muted">还没有备份。执行编辑 / 删除 / 合并时会自动生成。</div>';
+  $$('[data-re]').forEach(x=>x.onclick=async()=>{
+    const ok=await ask('回滚','把该备份覆盖回当前账号文件？当前数据会先再备份一次。',{danger:true,okText:'回滚'});
+    if(!ok||!main) return;
+    const r=await api('/api/restore',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({src:main.id,file:x.dataset.re})});
+    toast(r.ok?'已回滚':'失败：'+r.error, !r.ok); loadBackup(); loadState(); loadUsers();
+  });
+  const l=await api('/api/log?n=120');
+  $('#logBody').textContent=(l.rows||[]).map(x=>
+    `${new Date(x.at).toLocaleString('zh-CN',{hour12:false})}  ${x.op.padEnd(9)} ${x.src||''} ${x.uid||''} ${x.username||''} ${x.added!=null?('新增'+x.added+' 合并'+x.merged):''} ${x.n!=null?('踢下线'+x.n):''} ${x.backup?('备份:'+x.backup):''}`
+  ).join('\n') || '暂无操作记录。';
+}
+
+/* ---------- 发布更新（OTA） ---------- */
+async function loadOta(){
+  const r=await api('/api/release');
+  if(!r.ok){ $('#otaState').textContent='读取失败'; return; }
+  const pub=r.published, cur=r.current||[];
+  if($('#otaBase') && !$('#otaBase').value) $('#otaBase').value=r.base||'';
+  const short=s=>String(s||'').slice(0,8);
+  $('#otaFiles').innerHTML=cur.map(c=>{
+    const p=(pub&&(pub.files||[]).find(x=>x.rel===c.rel))||null;
+    const same=p&&p.md5===c.md5;
+    return `<tr><td>${esc(c.rel)}</td><td style="text-align:right" class="num">${(c.size/1024).toFixed(1)} KB</td>
+      <td class="mono">${p?short(p.md5):'<span class="muted">未发布</span>'}</td>
+      <td class="mono">${short(c.md5)}</td>
+      <td>${!p?'<span class="tag">待首次发布</span>':(same?'<span class="tag g">一致</span>':'<span class="tag w">有改动</span>')}</td></tr>`;
+  }).join('')||'<tr><td colspan="5" class="muted">web/ 下没找到前端文件</td></tr>';
+
+  const when=pub?new Date(pub.at).toLocaleString('zh-CN',{hour12:false}):'—';
+  $('#otaState').innerHTML = pub
+    ? `已发布 <b>v${esc(pub.version)}</b>（第 ${pub.seq} 版）· ${when}` +
+      (pub.note?` · ${esc(pub.note)}`:'') + `<br>更新源：<code>${esc(pub.base||'（未设置，exe 会用打包时写死的地址）')}</code><br>` +
+      (r.dirty?'<span class="tag w">当前工程有改动，可发布新版</span>':'<span class="tag g">已是最新，无需发布</span>')
+    : '<span class="tag w">尚未发布任何版本</span> —— exe 目前只能用内嵌的旧前端。发布后它们会在 30 分钟内自动跟上。';
+
+  /* 安卓客户端当前状态 */
+  const apk=r.apk;
+  $('#otaApkState').innerHTML = apk
+    ? `已发布 <b>v${esc(apk.versionName||'?')}</b>（序号 ${apk.versionCode||1}）· ${(apk.size/1024/1024).toFixed(2)} MB` +
+      (apk.note?` · ${esc(apk.note)}`:'') +
+      (apk.force?' <span class="tag w">强制更新</span>':'') +
+      `<br>文件：<code>${esc(apk.file||'')}</code>`
+    : '<span class="tag w">尚未发布安卓客户端</span> —— 手机用户只能靠浏览器添加到桌面。';
+  if(apk && $('#otaApkCode') && !$('#otaApkCode').value) $('#otaApkCode').value=Number(apk.versionCode||1)+1;
+}
+$('#btnOtaRefresh').onclick=()=>loadOta();
+$('#btnOtaPub').onclick=async()=>{
+  const ok=await ask('发布更新','把当前 web/ 打包成新版本？手机端和已装 exe 的用户都会收到更新提示。',{okText:'发布'});
+  if(!ok) return;
+  const lines=$('#otaNote').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  const r=await api('/api/release/publish',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({base:$('#otaBase').value.trim(), note:lines[0]||'', changelog:lines,
+                         version:$('#otaVer').value.trim(), force:$('#otaForce').checked})});
+  toast(r.ok?`已发布 v${r.published.version}，用户会收到更新消息`:('失败：'+r.error), !r.ok);
+  if(r.ok){ $('#otaNote').value=''; $('#otaVer').value=''; $('#otaForce').checked=false; loadOta(); loadBackup(); loadNotice(); }
+};
+
+/* ── 消息中心：发公告 + 看历史 ─────────────────────────────────── */
+async function loadNotice(){
+  const box=$('#noticeList'); if(!box) return;
+  const r=await api('/api/notice');
+  const list=(r&&r.list)||[];
+  if(!list.length){ box.innerHTML='<div class="muted" style="padding:10px 0">还没有消息</div>'; return; }
+  box.innerHTML=list.map(n=>{
+    const esc=s=>String(s||'').replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'})[c]);
+    const pts=(n.points||[]).map(p=>`<div style="font-size:12px;color:var(--sub);margin-top:3px">· ${esc(p)}</div>`).join('');
+    const d=new Date(n.at||Date.now());
+    return `<div style="border:1px solid var(--line);border-radius:9px;padding:9px 11px;margin-bottom:8px;background:var(--bg2)">
+      <div style="display:flex;align-items:center;gap:7px">
+        <b style="font-size:13px">${esc(n.title)}</b>
+        <span class="tag ${n.type==='update'?'g':''}" style="margin-left:auto">${n.type==='update'?'版本更新':'公告'}</span>
+      </div>
+      <div class="muted" style="font-size:11px;margin-top:3px">${d.getMonth()+1}月${d.getDate()}日 ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}</div>
+      ${n.body?`<div style="font-size:12.5px;margin-top:6px;color:var(--fg)">${esc(n.body)}</div>`:''}
+      ${pts}
+      <div style="margin-top:8px"><button class="btn sm" data-del="${n.id}">删除</button></div>
+    </div>`;
+  }).join('');
+  box.querySelectorAll('[data-del]').forEach(b=>{
+    b.onclick=async()=>{
+      if(!await ask('删除消息','删掉这条后用户那边也会消失，确定？',{okText:'删除'})) return;
+      const rr=await api('/api/notice/delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:b.dataset.del})});
+      toast(rr.ok?'已删除':'删除失败',!rr.ok); if(rr.ok) loadNotice();
+    };
+  });
+}
+const _np=$('#btnNoticePost');
+if(_np) _np.onclick=async()=>{
+  const title=$('#noticeTitle').value.trim();
+  const body=$('#noticeBody').value.trim();
+  const lines=$('#noticePoints').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  if(!title&&!body){ toast('至少填个标题或正文',true); return; }
+  const r=await api('/api/notice/post',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({title,body,points:lines,top:$('#noticeTop').checked})});
+  toast(r.ok?'已推送到所有客户端的消息中心':('失败：'+r.error),!r.ok);
+  if(r.ok){ $('#noticeTitle').value=''; $('#noticeBody').value=''; $('#noticePoints').value=''; $('#noticeTop').checked=false; loadNotice(); }
+};
+
+/* 上传 APK：读成 base64 交给管理台落盘，手机端下次启动就能收到安装提示 */
+$('#btnOtaApk').onclick=async()=>{
+  const f=$('#otaApkFile').files && $('#otaApkFile').files[0];
+  if(!f){ toast('先选择一个 APK 文件', true); return; }
+  if(!/\.apk$/i.test(f.name)){ toast('请选 .apk 文件', true); return; }
+  let b64;
+  try{
+    b64=await new Promise((res,rej)=>{
+      const rd=new FileReader();
+      rd.onload=()=>res(String(rd.result).split(',')[1]||'');
+      rd.onerror=()=>rej(new Error('读取失败'));
+      rd.readAsDataURL(f);
+    });
+  }catch(e){ toast('文件读取失败', true); return; }
+  if(!b64){ toast('文件读取失败', true); return; }
+  const ver=$('#otaApkVer').value.trim();
+  const code=Number($('#otaApkCode').value)||0;
+  if(!ver){ toast('填一下版本号，例如 1.0.1', true); return; }
+  if(code<=0){ toast('版本序号要大于 0，且比当前大', true); return; }
+  const ok=await ask('发布安卓客户端',`把 ${f.name} 发布为 v${ver}（序号 ${code}）？手机端会收到安装提示。`,{okText:'发布'});
+  if(!ok) return;
+  const r=await api('/api/release/apk',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({data:b64, versionName:ver, versionCode:code,
+                         note:$('#otaApkNote').value.trim(), force:$('#otaApkForce').checked})});
+  toast(r.ok?`已发布安卓 v${r.apk.versionName}`:('失败：'+r.error), !r.ok);
+  if(r.ok){ $('#otaApkFile').value=''; $('#otaApkVer').value=''; $('#otaApkNote').value='';
+            $('#otaApkForce').checked=false; loadOta(); }
+};
+$('#btnOtaRoll').onclick=async()=>{
+  const ok=await ask('回滚','退回到上一版？发错了可以用这个救回来。',{danger:true,okText:'回滚'});
+  if(!ok) return;
+  const r=await api('/api/release/rollback',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+  toast(r.ok?`已回到 v${r.published.version}`:('失败：'+r.error), !r.ok);
+  if(r.ok) loadOta();
+};
+
+/* ---------- 其它 ---------- */
+$('#srcSel').onchange=e=>{ state.src=e.target.value; state.page=1; loadUsers(); };
+$('#q').oninput=e=>{ state.q=e.target.value; state.page=1; clearTimeout(window._t); window._t=setTimeout(loadUsers,220); };
+$('#sortSel').onchange=e=>{ state.sort=e.target.value; loadUsers(); };
+$('#fullPhone').onchange=e=>{ state.full=e.target.checked; loadUsers(); };
+$('#pPrev').onclick=()=>{ if(state.page>1){state.page--;renderRows();} };
+$('#pNext').onclick=()=>{ state.page++; renderRows(); };
+$('#btnRefresh').onclick=()=>{ loadState(); loadUsers(); };
+$('#onlyOnline').onchange=()=>{ state.page=1; renderRows(); };
+$('#btnExportCsv').onclick=()=>location.href=`/api/export?src=${encodeURIComponent(state.src)}&fmt=csv`;
+$('#btnExportJson').onclick=()=>location.href=`/api/export?src=${encodeURIComponent(state.src)}&fmt=json`;
+$('#btnDedupe').onclick=async()=>{
+  const s=state.src==='all'?((state.srcs||[]).find(x=>x.main)||{}) : ((state.srcs||[]).find(x=>x.id===state.src)||{});
+  if(!s.id) return toast('请先选择单个数据源', true);
+  const d=await api('/api/dedupe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({src:s.id,keep:'lastLogin',preview:true})});
+  if(!d.ok) return toast('预览失败：'+d.error, true);
+  if(!d.merged) return toast('本源没有重复手机号，无需整理', false);
+  const ok=await ask('整理同号账号',`本源有 <b>${d.merged}</b> 组同手机号账号。合并后保留最近登录那条的登录凭证，收藏/历史做并集。<br><br>继续？`,{okText:'整理'});
+  if(!ok) return;
+  const r=await api('/api/dedupe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({src:s.id,keep:'lastLogin'})});
+  toast(r.ok?`已整理 ${r.merged} 组，备份 ${r.backup}`:'失败', !r.ok); loadUsers(); loadState();
+};
+$('#btnUnify').onclick=async()=>{
+  const r=await api('/api/unify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})});
+  toast(r.ok?('已生成：admin/'+r.file):'生成失败', !r.ok);
+};
+$('#btnSess').onclick=loadAccess;
+
+(async function init(){ await loadState(); await loadUsers(); go(location.hash.slice(1)||'overview'); })();
+
+/* ---------- 音频审核 ---------- */
+let auState = 'pending';
+async function loadAudits(){
+  const box = $('#auditList'); if(!box) return;
+  box.innerHTML = '<div class="muted" style="padding:10px 0">加载中…</div>';
+  const r = await api('/api/uploads?state=' + encodeURIComponent(auState));
+  if(!r.ok){ box.innerHTML = '<div class="muted">读取失败</div>'; return; }
+  const list = r.list || [];
+  const nEl = $('#nAudit');
+  if(nEl){
+    const all = await api('/api/uploads');
+    const pend = ((all.list)||[]).filter(x=>x.state==='pending').length;
+    nEl.textContent = pend ? (' '+pend) : '';
+  }
+  if(!list.length){
+    box.innerHTML = '<div class="muted" style="padding:16px 0;text-align:center">这个状态下没有内容</div>';
+    return;
+  }
+  const esc = s => String(s==null?'':s).replace(/[<>&"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'})[c]);
+  const size = b => (b>1048576 ? (b/1048576).toFixed(1)+' MB' : Math.max(1,Math.round(b/1024))+' KB');
+  const d = t => { const x = new Date(t||Date.now());
+    return (x.getMonth()+1)+'月'+x.getDate()+'日 '+String(x.getHours()).padStart(2,'0')+':'+String(x.getMinutes()).padStart(2,'0'); };
+  box.innerHTML = list.map(t=>{
+    const tag = t.state==='approved' ? '<span class="tag g">已通过</span>'
+      : t.state==='rejected' ? '<span class="tag r">未通过</span>'
+      : '<span class="tag w">待审核</span>';
+    return `<div class="urow" style="border:1px solid var(--line);border-radius:9px;padding:10px 11px;margin-bottom:8px;background:var(--bg2)">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <b style="font-size:13.5px">${esc(t.name)}</b>
+        ${tag}
+        <span class="muted" style="font-size:11.5px;margin-left:auto">${d(t.at)}</span>
+      </div>
+      <div class="muted" style="font-size:12px;margin-top:4px">
+        ${esc(t.artist||'未知歌手')} · ${esc(t.uploader)} · ${size(t.size)} · ${esc((t.ext||'').toUpperCase())}
+        ${t.plays?(' · 播放 '+t.plays+' 次'):''}
+        ${t.exists?'':' · <span style="color:var(--r,#e07b7b)">文件缺失</span>'}
+      </div>
+      ${t.state==='rejected'&&t.reason?`<div class="muted" style="font-size:12px;margin-top:4px">驳回理由：${esc(t.reason)}</div>`:''}
+      <div class="bar" style="margin-top:9px;gap:7px;flex-wrap:wrap">
+        <audio controls preload="none" src="/api/uploads/file?id=${encodeURIComponent(t.id)}" style="height:32px;max-width:260px"></audio>
+        ${t.state!=='approved'?`<button class="btn sm pri" data-ok="${t.id}">通过</button>`:''}
+        ${t.state!=='rejected'?`<button class="btn sm" data-no="${t.id}">驳回</button>`:''}
+        <button class="btn sm" data-rm="${t.id}" style="color:#e07b7b">删除</button>
+      </div>
+    </div>`;
+  }).join('');
+  box.querySelectorAll('[data-ok]').forEach(b=>{
+    b.onclick = async ()=>{
+      const r2 = await api('/api/uploads/review',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({id:b.dataset.ok, approve:true})});
+      toast(r2.ok?'已通过':'失败',!r2.ok); if(r2.ok) loadAudits();
+    };
+  });
+  box.querySelectorAll('[data-no]').forEach(b=>{
+    b.onclick = async ()=>{
+      const why = prompt('驳回理由（用户会看到）','内容不符合要求');
+      if(why===null) return;
+      const r2 = await api('/api/uploads/review',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({id:b.dataset.no, approve:false, reason:why})});
+      toast(r2.ok?'已驳回':'失败',!r2.ok); if(r2.ok) loadAudits();
+    };
+  });
+  box.querySelectorAll('[data-rm]').forEach(b=>{
+    b.onclick = async ()=>{
+      if(!await ask('删除音频','连同文件一起删掉，不可恢复。确定？',{okText:'删除'})) return;
+      const r2 = await api('/api/uploads/delete',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({id:b.dataset.rm})});
+      toast(r2.ok?'已删除':'失败',!r2.ok); if(r2.ok) loadAudits();
+    };
+  });
+}
+$$('[data-au]').forEach(b=>{
+  b.onclick = ()=>{
+    auState = b.dataset.au;
+    $$('[data-au]').forEach(x=>x.classList.toggle('pri', x.dataset.au===auState));
+    loadAudits();
+  };
+});
+const _br = $('#btnAuRefresh'); if(_br) _br.onclick = ()=>loadAudits();
+$$('[data-au]').forEach(x=>x.classList.toggle('pri', x.dataset.au===auState));
+
+</script>
+</body>
+</html>

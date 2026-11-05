@@ -1,0 +1,844 @@
+<!doctype html>
+<!--
+  桌面歌词浮窗的页面（由 desktop/shell-lyric.js 载入，窗口无边框 + 透明）。
+
+  两条交互约定（跟 shell-lyric.js 一一对应，改一边必须改另一边）：
+    · 未锁定：#box 是拖拽区（-webkit-app-region: drag），工具条常显且 no-drag。
+              此时窗口会吃掉鼠标事件 —— 这是有意的，用户要拖它。
+    · 已锁定：整窗鼠标穿透（主进程 setIgnoreMouseEvents(true,{forward:true})），
+              #box 降成 no-drag，工具条隐藏；指针**靠近**工具条时通知主进程
+              临时放开穿透，工具条淡入 —— 这就是「锁定之后还能解锁」。
+
+  ⚠️ 拖拽区放在 #box 而不是 body 上：Electron 里 drag 区域会吞掉鼠标事件
+     （连 CSS :hover 都不生效），所以穿透检测不能依赖它。锁定态把 #box 降成
+     no-drag，mousemove 才拿得到。
+
+  ⚠️ 三处协议标记不可删：id="meta" / id="line" / window.ymLyric。
+     shell-lyric.js 的 OTA 用它们校验「拉到的到底是不是歌词页」，
+     少一个就会永远回退内置版本，而界面上看起来「一切正常」。
+-->
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy"
+      content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
+<title>YMusic 桌面歌词</title>
+<style>
+  html, body {
+    margin: 0; height: 100%; background: transparent; overflow: hidden;
+    font-family: "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+    color: #eaf5ee;
+    -webkit-user-select: none; user-select: none; cursor: default;
+  }
+  #box {
+    position: absolute; inset: 5px;
+    display: flex; flex-direction: column; justify-content: center; gap: 3px;
+    padding: 10px 16px 12px;
+    border-radius: 14px;
+    /* 主题变量由 .theme-* 类写；内容色/底/边/光晕全部走变量，
+       以后加一套配色只需要加一条 .theme-x 规则。 */
+    background: var(--bg, rgba(7, 11, 8, 0.86));
+    border: 1px solid var(--bd, rgba(61, 220, 151, 0.22));
+    box-shadow: 0 8px 26px rgba(0, 0, 0, 0.5);
+    -webkit-app-region: drag;                 /* 未锁定时整块可拖 */
+    overflow: hidden;
+  }
+  body.locked #box { -webkit-app-region: no-drag; }   /* 锁定 = 穿透，拖拽让位 */
+
+  /* ── 暂停压暗：这里曾经是个死规则 ──────────────────────────────
+     老写法 `body.dim #box { opacity: .5; }` 永远不生效 —— renderStyle() 里
+     `elBox.style.opacity = String(style.opacity)` 是内联样式，优先级高于
+     样式表里任何选择器。结果「暂停时压暗」这个功能从上线起就是假的。
+     现在改成两层相乘：#box 的 opacity 只消费一个变量，dim 改乘数。 */
+  #box { opacity: calc(var(--box-op, 0.92) * var(--dim-k, 1)); }
+  body.dim { --dim-k: 0.55; }
+
+  /* ── 失焦不再塌行（业主拍板：三段必须稳定显示）──────────────────
+     原实现是
+        body.mini #meta, body.mini #next { display: none; }
+        body.mini #box { gap: 0; }
+        body.mini #line { line-height: 1.24; }
+     —— 失焦后只剩正在唱的一行，与业主「歌名 + 正在唱 + 下一句三段稳定显示」
+     的要求正面冲突，三条全部删除。
+
+     ❌ display:none 一律不许再回来。除了塌成一行，它还有第二个毛病：
+        #box 是 flex + justify-content:center，少一个子项就会立刻重新居中，
+        整块内容跳一下（实测 #line 文本中心位移 26/34/44 档分别为
+        +2.36 / +4.45 / +5.24px）。
+
+     ❌ 也不要「失焦紧凑档」（压缩 gap / 行距 / 字号系数）：切焦点时改尺寸
+        **本身就是跳**。业主要的是稳定显示，不是失焦时换一套更挤的排版。
+        聚焦态与失焦态共用同一套尺寸；真装不下时由 fitScale() 等比缩字号。
+
+     于是 .mini 退化成一个纯信号 class：主进程仍然推 focus，页面上没有任何
+     一条 CSS 规则再消费它（留着它是给排查和后续按颜色做层次用的）。 */
+
+  /* ── #next 没有下一句时（末句 / 无词）必须留住这一行的位置 ──
+     空文本块没有 line box，高度会塌成 0，flex 照样重新居中
+     （实测位移 +9~+15.6px，比 display:none 还大）。
+     所以 renderData() 里用 visibility:hidden 之外，这里还要给一行保底高度 ——
+     **两者成对存在才 Δ0，只写 visibility 是不够的**。
+     ⚠ 用 em 不用 px：它跟着 renderStyle() 写进来的内联字号走（含 fitScale
+        缩放后的值），写死 px 会在缩放/换档时不跟着变。 */
+  #next { min-height: 1.2em; }
+
+  /* ── 三行一律不许被压扁 ──
+     #box 是 flex 列容器，默认 flex-shrink:1：装不下时它会把三行一起压扁
+     （实测 44px 档在默认 118 高上，三行被压到正好塞满 86px，字形上下各切一截）。
+     压扁之后 offsetHeight 量到的是假值，页面就没法算出「到底需要多高」。
+     改成 flex:none 后三行保持自然行高，装不下就溢出（由 fitScale 兜底缩字号）。 */
+  #meta, #line, #next { flex: none; }
+
+  #meta {
+    font-size: 12px; line-height: 1.3; color: var(--meta-fg, #8fb3a2);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    /* 第一行要给右上角工具条让位。border-box 是必须的：居中态还会补上
+       padding-left，content-box 下 width:100% + 两侧内边距会直接撑出容器。 */
+    padding-right: 198px; box-sizing: border-box;
+  }
+  /* ── P1-3 封面取色 ──
+     --accent 由 renderData 写在这颗元素自己身上，取不到就退回主题色。
+     ⚠️ 兜底色**必须**写在这同一条规则里。曾经把
+        `#line{color:var(--accent,#f4fbf7)}` 单独写在上面，
+        结果被下面这条同优先级的 `color:#f4fbf7` 整个盖掉 ——
+        取色一次都没生效过，而页面上看起来「一切正常」。
+     ⚠️ 正文/元信息/边框一律不用它：深色歌词窗上一旦底色跟着封面变，
+        每首歌的观感都不一样，读歌词反而累。 */
+  #line {
+    font-weight: 700; line-height: 1.16;
+    color: var(--accent, var(--cur, #f4fbf7));
+    text-shadow: 0 2px 10px rgba(0, 0, 0, .7);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  /* ── 占位态（取词中 / 没取到 / 没有歌词）用另一张脸 ──
+     真在唱的那一句是加粗 + 高亮色；占位文案若也用同一张脸，用户会把它
+     当成歌词读（「这首歌第一句就叫『取歌词…』？」）。
+     前奏不算占位：它显示的就是真词，只是还没开唱 —— 所以不加这个 class。 */
+  #line.ph {
+    font-weight: 600; color: var(--ph-fg, #9fc4b1);
+  }
+  #next {
+    font-size: 19px; line-height: 1.2; color: var(--next-fg, #7ba48f);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    /* ⚠️ 这里**不能**给工具条留内边距：next 在最后一行，工具条在最上面一行，
+       两者物理上不重叠。老版本写死的 padding-right:100px 只会让居中的下一句
+       系统性偏左（左边没留、右边留了），长句还更早被省略号截断。 */
+    padding-right: 0; box-sizing: border-box;
+  }
+
+  /* ── 对齐 ──
+     只有「居中 / 左对齐」两种，跟大厂一致。右对齐没人用，不做。
+     居中是默认：桌面歌词多数是「悬浮在屏幕下方的一行字」，
+     左对齐在宽窗上会让人下意识去找左边距。 */
+  #box.al-center { align-items: center; text-align: center; }
+  #box.al-center #meta, #box.al-center #line, #box.al-center #next {
+    width: 100%; text-align: center;
+  }
+  /* 居中的歌名必须左右留一样多才真的在中间：只留右边（给工具条让位）
+     会让整行文字系统性左偏约 99px —— 这是肉眼看得出、又说不出哪不对的那种歪。 */
+  #box.al-center #meta { padding-left: 198px; }
+  #box.al-left { align-items: flex-start; text-align: left; }
+
+  /* ── 工具条 ──────────────────────────────────────────────
+     ⚠️ 按钮 26px 是有讲究的：再小（原来 24px）在 4K 缩放的屏幕上很难点中，
+        再大（32px）会把 #meta 挤得只剩一半。26 配合 gap 4，6 颗正好 176px。
+     ⚠️ 工具条是 absolute 定位、不参与 flex 布局，所以它不会改变 needH；
+        它压在 #meta 右侧，靠 #meta/#next 的 padding-right:198px 让位。 */
+  #tools {
+    position: absolute; right: 7px; top: 6px;
+    display: flex; align-items: center; gap: 3px;
+    -webkit-app-region: no-drag;
+  }
+  body:not(.locked) #tools { opacity: .86; }
+  body.locked #tools { opacity: 0; pointer-events: none; }
+  body.locked.hot #tools { opacity: .96; pointer-events: auto; }
+  /* 未锁定时指针移上去更亮，明确「这里是能点的」 */
+  body:not(.locked) #tools:hover { opacity: 1; }
+
+  #tools button {
+    width: 26px; height: 26px; padding: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    border: 0; border-radius: 7px; cursor: pointer;
+    background: rgba(255, 255, 255, .07); color: #cfe6da;
+    font-size: 12px; line-height: 1; font-family: inherit;
+    -webkit-app-region: no-drag;
+    transition: background .12s, color .12s;
+  }
+  #tools button:hover { background: var(--hover, rgba(61, 220, 151, .22)); color: #eafff5; }
+  #tools button:active { transform: scale(.94); }
+  #tools button.danger:hover { background: rgba(255, 106, 92, .28); color: #ffd9d4; }
+  #tools button.on { background: var(--hover, rgba(61, 220, 151, .22)); color: #eafff5; }
+  #tools svg { width: 13px; height: 13px; display: block; }
+  #tools .sep { width: 1px; height: 14px; background: rgba(255, 255, 255, .12); margin: 0 1px; }
+
+  /* ── 设置面板 ─────────────────────────────────────────────
+     为什么是「换掉三行」而不是弹一个浮层：
+       浮层要么挡住歌词（用户在调字号时最想看见效果），
+       要么得让主进程临时把窗加高（会跟用户手动拖过的高度打架）。
+       直接把三行换成设置行，高度基本不变，调完一关就回到歌词 ——
+       而且调字号时看不见效果的问题也没了：面板收起前会顺手 renderStyle。
+     ⚠️ 面板自身 overflow-y:auto：窗口被用户拖得极矮时至少还能滚，
+        而不是把内容切掉（切掉就等于按钮点不到）。 */
+  #panel {
+    display: none;
+    /* ⚠️ 不能用 justify-content:center：内容比可用高度高时，flex 居中会把
+       上下两端一起挤出容器，而 overflow-y:auto 只能滚到「可见部分」——
+       实测顶部「字号」那行直接被裁掉、怎么滚都回不来。从顶部开始排才可达。 */
+    flex-direction: column; justify-content: flex-start; gap: 6px;
+    width: 100%; align-self: stretch;
+    height: 100%; overflow-y: auto; -webkit-app-region: no-drag;
+  }
+  body.panel #panel { display: flex; }
+  body.panel #meta, body.panel #line, body.panel #next { display: none; }
+  .pr { display: flex; align-items: center; gap: 6px; min-height: 22px; }
+  .pr > b {
+    flex: none; width: 34px; font-size: 11px; font-weight: 600;
+    color: var(--meta-fg, #8fb3a2); letter-spacing: .5px;
+  }
+  .pr > .vals { display: flex; align-items: center; gap: 3px; flex-wrap: wrap; }
+  .pr button {
+    height: 20px; min-width: 26px; padding: 0 6px;
+    border: 1px solid rgba(255, 255, 255, .12); border-radius: 6px;
+    background: rgba(255, 255, 255, .05); color: #b9d3c6;
+    font-size: 11px; font-family: inherit; cursor: pointer; line-height: 1;
+  }
+  .pr button:hover { border-color: var(--bd, rgba(61, 220, 151, .45)); color: #eafff5; }
+  .pr button.on {
+    background: var(--hover, rgba(61, 220, 151, .22));
+    border-color: var(--cur, #7fd88a); color: #f2fff8; font-weight: 600;
+  }
+  .swatch {
+    width: 18px; height: 18px; min-width: 18px; padding: 0;
+    border-radius: 50%; border: 2px solid transparent; cursor: pointer;
+  }
+  .swatch.on { border-color: #fff; box-shadow: 0 0 0 2px rgba(255, 255, 255, .25); }
+
+  /* ── 右键菜单 ── */
+  #ctx {
+    display: none; position: absolute; z-index: 20;
+    min-width: 132px; padding: 4px;
+    border-radius: 9px; background: rgba(14, 20, 16, .97);
+    border: 1px solid rgba(255, 255, 255, .1);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, .55);
+    -webkit-app-region: no-drag;
+  }
+  body.ctx #ctx { display: block; }
+  #ctx button {
+    display: flex; width: 100%; align-items: center; justify-content: space-between;
+    gap: 10px; padding: 6px 9px; border: 0; border-radius: 6px;
+    background: transparent; color: #d6e9dd;
+    font-size: 12px; font-family: inherit; text-align: left; cursor: pointer;
+  }
+  #ctx button:hover { background: var(--hover, rgba(61, 220, 151, .2)); color: #fff; }
+  #ctx button i { font-style: normal; font-size: 11px; opacity: .62; }
+  #ctx .hr { height: 1px; margin: 3px 4px; background: rgba(255, 255, 255, .09); }
+
+  /* ── 操作回执 ──
+     点字号/透明度/配色时窗内没有任何可见变化（尤其锁定态），
+     用户会以为「点了没反应」。给一条一闪而过的提示，右侧对齐不挡字。 */
+  #osd {
+    position: absolute; right: 10px; bottom: 8px; z-index: 15;
+    padding: 3px 9px; border-radius: 20px;
+    background: rgba(0, 0, 0, .62); color: #d9f2e5;
+    font-size: 11px; letter-spacing: .3px;
+    opacity: 0; transition: opacity .18s; pointer-events: none;
+    -webkit-app-region: no-drag;
+  }
+  #osd.on { opacity: 1; }
+</style>
+</head>
+
+<!-- ── 五套主题 ────────────────────────────────────────────────
+     色板与安卓悬浮窗的 5 档**同名同序**（绿 / 黄 / 绿橙 / 橙 / 粉），
+     这样同一个人在手机和电脑上看到的是同一组选项，不用记两套名字。
+     ⚠️ 安卓那边第 1 档（黄）原生色值实际偏青（0xFF6FE3E1），是原生自己的
+        命名与色值不一致 —— 电脑端按名字给真正的黄，不跟着错。
+     颜色只染三处：当前行、下一句、边框光晕。正文底色不动（读词不累）。 -->
+<body class="theme-green">
+  <div id="box">
+    <div id="meta">YMusic 桌面歌词</div>
+    <div id="line">等待播放…</div>
+    <div id="next"></div>
+
+    <div id="panel">
+      <div class="pr"><b>字号</b><span class="vals" id="pSize"></span></div>
+      <div class="pr"><b>浓度</b><span class="vals" id="pOp"></span></div>
+      <div class="pr"><b>配色</b><span class="vals" id="pTheme"></span></div>
+      <div class="pr"><b>布局</b><span class="vals" id="pAlign"></span></div>
+      <div class="pr"><b>显示</b><span class="vals" id="pShow"></span></div>
+    </div>
+
+    <div id="tools">
+      <button id="bPrev" title="上一首"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h2v14H6zm3.5 7L18 5v14z"/></svg></button>
+      <button id="bPlay" title="播放 / 暂停"><svg viewBox="0 0 24 24" fill="currentColor"><path id="playPath" d="M8 5v14l11-7z"/></svg></button>
+      <button id="bNext" title="下一首"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 5h2v14h-2zM6 5l8.5 7L6 19z"/></svg></button>
+      <span class="sep"></span>
+      <button id="bCfg" title="歌词设置"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h8M18 7h2M4 12h3M13 12h7M4 17h10M20 17h0.1"/><circle cx="15" cy="7" r="2.2"/><circle cx="10" cy="12" r="2.2"/><circle cx="17" cy="17" r="2.2"/></svg></button>
+      <button id="bLock" title="锁定歌词（鼠标穿透）／再点一下解锁"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4.5" y="10" width="15" height="10.5" rx="2.2"/><path id="lockShackle" d="M8 10V7.2a4 4 0 0 1 8 0V10"/></svg></button>
+      <button id="bClose" class="danger" title="关闭桌面歌词"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+
+    <div id="ctx"></div>
+    <div id="osd"></div>
+  </div>
+
+<script>
+/* ⚠️ 无构建、无框架：这里就是歌词窗的全部脚本。
+   它只做四件事：把主进程推来的文字画出来、把点击转成 ymLyric 调用、
+   在锁定态下上报「指针是否靠近工具条」、维护外观偏好。
+
+   🔴 老壳兼容：本页面会通过 OTA 下发到已经装好的旧 exe 上，那些壳的
+      lyric-preload.js 只有 lock/hover/pref/close 四个方法。所以**每一个**
+      api.xxx 调用都必须先判 typeof === 'function' —— 少判一个，
+      页面在旧壳上会直接抛异常、整个脚本停摆（歌词窗一片空白）。 */
+(function () {
+  'use strict';
+  var api = window.ymLyric || {};
+  function $(id) { return document.getElementById(id); }
+  var elBox = $('box'), elMeta = $('meta'), elLine = $('line'),
+      elNext = $('next'), elTools = $('tools'), elPanel = $('panel'),
+      elCtx = $('ctx'), elOsd = $('osd');
+
+  /* ── 可选项表 ────────────────────────────────────────────── */
+  /* 字号：5 档。范围与安卓一致（原生钳 14..48，默认 26），
+     这里取 24/28/34/40/46 —— 46 不到 48，是给 #next 留出行高余量。 */
+  var SIZES = [24, 28, 34, 40, 46];
+  var SIZE_TXT = ['小', '标准', '大', '特大', '超大'];
+  /* 透明度 5 档。0.4 是下限：再淡就看不清字，而歌词窗一旦看不清就等于没有 */
+  var OPACITIES = [1, 0.86, 0.72, 0.56, 0.4];
+  var OP_TXT = ['100%', '86%', '72%', '56%', '40%'];
+  /* 主题：name 与安卓调色板同名同序 */
+  var THEMES = [
+    { id: 'green',  name: '绿',   cur: '#7fd88a', next: '#5f9a6f', bd: 'rgba(127,216,138,.30)', hover: 'rgba(127,216,138,.24)', meta: '#8fb3a2' },
+    { id: 'yellow', name: '黄',   cur: '#ffe36f', next: '#c8a94f', bd: 'rgba(255,227,111,.30)', hover: 'rgba(255,227,111,.22)', meta: '#c0b184' },
+    { id: 'duo',    name: '绿橙', cur: '#9fd57a', next: '#d09a55', bd: 'rgba(159,213,122,.30)', hover: 'rgba(159,213,122,.22)', meta: '#a8bb94' },
+    { id: 'orange', name: '橙',   cur: '#f5a623', next: '#b57c22', bd: 'rgba(245,166,35,.30)',  hover: 'rgba(245,166,35,.22)',  meta: '#c9a878' },
+    { id: 'pink',   name: '粉',   cur: '#e86fa8', next: '#a8597c', bd: 'rgba(232,111,168,.30)', hover: 'rgba(232,111,168,.22)', meta: '#c39aad' }
+  ];
+
+  /* ── 状态 ──
+     偏好字段全部以主进程推来的为准（多开窗口、托盘菜单也能改）。
+     这里不做乐观更新：点按钮 → 发 pref → 主进程回推 → 才改本地。
+     这样「页面显示」与「shell.json 里存的」永远是同一份。
+     ⚠️ 但主进程回推是异步的（一次 IPC 往返），期间按钮没有高亮反馈会像卡住，
+        所以 renderStyle/renderPanel 都在本地先跑一次（乐观），
+        回推时再用权威值覆盖 —— 两者冲突时以回推为准。 */
+  var style = {
+    locked: false, opacity: 0.92, fontSize: 34,
+    theme: 'green', align: 'center', showMeta: true, showNext: true
+  };
+  var playing = false;
+  var hot = false, panelOpen = false, ctxOpen = false;
+  var lastNeedH = 0;
+
+  /* 三行字号的系数与兜底下限。聚焦态与失焦态**共用这一组**。
+     🔴 这一条同时也是「needH 不会在切焦点时变值」的前提。 */
+  var K_META = 0.36, K_NEXT = 0.58, MIN_META = 11;
+
+  function clampFont(px) { return Math.max(16, Math.min(72, px || 34)); }
+  function idxOf(arr, v) { var i = arr.indexOf(v); return i < 0 ? 0 : i; }
+  function themeOf(id) {
+    for (var i = 0; i < THEMES.length; i++) if (THEMES[i].id === id) return THEMES[i];
+    return THEMES[0];
+  }
+
+  /* 三行的基准字号（未经防裁切缩放的自然值）。 */
+  function baseSizes() {
+    var f = clampFont(style.fontSize);
+    return {
+      line: f,
+      next: Math.round(f * K_NEXT),
+      meta: Math.max(MIN_META, Math.round(f * K_META))
+    };
+  }
+
+  /* 一行的「每 1px 字号对应多少 px 行高」。现量现用，不把行高倍率写死在 JS 里。
+     ⚠ 必须用 getBoundingClientRect 取小数，不能用 offsetHeight（整数截断）——
+        实测 34px 档截断后少算 0.83px，正好把主行底部切掉一丝。
+     ⚠ 能这么量是因为 CSS 给三行加了 flex:none：否则装不下时 flex 会把它们压扁，
+        量到的是压扁后的假高度。 */
+  function lhPerPx(el) {
+    var h = el.getBoundingClientRect().height;
+    var s = parseFloat(el.style.fontSize);
+    if (h > 0 && s > 0) return h / s;
+    return (el === elLine) ? 1.16 : 1.2;
+  }
+
+  /* 三段所需的窗口高度。#box 是 absolute + inset:5px，撑不出自然高度，
+     所以按「三行 + gap + padding + border + inset」加回来。
+     面板打开时按面板内容算 —— 面板比三行高，不给够就点不到最下面那排按钮。 */
+  function needHeight() {
+    try {
+      var b = baseSizes();
+      var cs = getComputedStyle(elBox);
+      var gap = parseFloat(cs.rowGap || cs.gap) || 0;
+      var pad = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
+      var bd = (parseFloat(cs.borderTopWidth) || 0) + (parseFloat(cs.borderBottomWidth) || 0);
+      if (panelOpen) {
+        /* 5 行、行高 22、间距 6（与 CSS 的 .pr min-height + #panel gap 对齐）。
+           少算一像素就会让最下面那排按钮被切掉半行 —— 那种「点一半」比不能点更难受。 */
+        return Math.ceil(5 * 22 + 4 * 6 + pad + bd + 10);
+      }
+      var rows = b.line * lhPerPx(elLine)
+        + b.meta * lhPerPx(elMeta)
+        + b.next * lhPerPx(elNext);
+      return Math.ceil(rows + gap * 2 + pad + bd + 10);   /* 10 = inset 上下各 5 */
+    } catch (e) { return 0; }
+  }
+
+  /* 走已有的 pref 通道报给主进程（api.pref → shell:lyric:pref → lyric.setPref），
+     不新增 IPC。判等后再发：窗口 resize 会触发重算，不判等就是每帧一次 IPC。 */
+  function reportHeight() {
+    var h = needHeight();
+    if (h > 0 && h !== lastNeedH) {
+      lastNeedH = h;
+      if (typeof api.pref === 'function') api.pref('needH', h);
+    }
+  }
+
+  /* ── 防裁切兜底 ──
+     窗口高度归用户管（出厂默认 118，但用户可以手动拖小），内容高度归字号管。
+     打架时宁可把字号等比缩小，也不让内容溢出被 overflow:hidden 切掉。
+     ⚠ 缩放只写进元素的 style.fontSize，**绝不回写 style.fontSize**：
+        「字号」档位靠 SIZES.indexOf(style.fontSize) 认当前档，
+        回写会让它当场乱档。 */
+  function fitScale() {
+    try {
+      var cs = getComputedStyle(elBox);
+      var pad = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
+      var avail = elBox.clientHeight - pad;      /* clientHeight 含 padding、不含 border */
+      if (!(avail > 0)) return 1;
+      var gap = parseFloat(cs.rowGap || cs.gap) || 0;
+      var rows = (style.showMeta ? elMeta.getBoundingClientRect().height : 0)
+        + elLine.getBoundingClientRect().height
+        + (style.showNext ? elNext.getBoundingClientRect().height : 0);
+      var need = rows + gap * 2;
+      if (need <= avail) return 1;
+      var k = (avail - gap * 2) / rows;
+      return k > 0.6 ? k : 0.6;                  /* 再小就没法读了，宁可被裁 */
+    } catch (e) { return 1; }
+  }
+
+  function applyTheme() {
+    var t = themeOf(style.theme);
+    /* 用 classList 逐条开关，不动整个 className 串 —— 直接拼串会把
+       locked / panel / ctx / hot 这些状态类一起打断（它们由别的函数管）。 */
+    for (var i = 0; i < THEMES.length; i++) {
+      document.body.classList.toggle('theme-' + THEMES[i].id, THEMES[i].id === t.id);
+    }
+    /* 五项都写成 CSS 变量，#box / #line / #next / #tools 各自消费。
+       这样加配色不用改选择器，只在 THEMES 里加一条。 */
+    elBox.style.setProperty('--cur', t.cur);
+    elBox.style.setProperty('--next-fg', t.next);
+    elBox.style.setProperty('--bd', t.bd);
+    elBox.style.setProperty('--hover', t.hover);
+    elBox.style.setProperty('--meta-fg', t.meta);
+  }
+
+  function renderStyle() {
+    var b = baseSizes();
+    /* 先按基准字号落一次，fitScale() 要量真实行高 */
+    elLine.style.fontSize = b.line + 'px';
+    elNext.style.fontSize = b.next + 'px';
+    elMeta.style.fontSize = b.meta + 'px';
+    /* 显示/隐藏歌名与下一句：一律 visibility，绝不用 display ——
+       理由见 CSS 里那段「#next 必须留住位置」，歌名同理。 */
+    elMeta.style.visibility = style.showMeta ? '' : 'hidden';
+    elNext.style.visibility = (style.showNext && elNext.textContent) ? '' : 'hidden';
+    applyTheme();
+    reportHeight();
+    var k = fitScale();
+    if (k < 1) {
+      setScaled(b, k);
+      /* floor 取整会吃掉零点几像素，再量一次、把残余溢出吸收掉 */
+      var k2 = fitScale();
+      if (k2 < 1) setScaled(b, k * k2);
+    }
+    elBox.style.setProperty('--box-op', String(style.opacity));
+    elBox.classList.toggle('al-center', style.align !== 'left');
+    elBox.classList.toggle('al-left', style.align === 'left');
+    document.body.classList.toggle('locked', !!style.locked);
+    /* 锁图标用 SVG（emoji 在深色底上是彩色的，跟其余线框图标不搭）。
+       锁定/解锁只换锁梁那一段路径，锁体不动 —— 比换整颗按钮稳。 */
+    var sh = $('lockShackle');
+    if (sh) {
+      sh.setAttribute('d', style.locked
+        ? 'M8 10V7.2a4 4 0 0 1 8 0V10'
+        : 'M8 10V7.2a4 4 0 0 1 7.3-2.2');
+    }
+    $('bLock').title = style.locked ? '已锁定（鼠标穿透）· 点此解锁' : '锁定歌词（鼠标穿透）';
+    renderPanel();
+  }
+
+  function setScaled(b, k) {
+    elLine.style.fontSize = Math.max(12, Math.floor(b.line * k)) + 'px';
+    elNext.style.fontSize = Math.max(9, Math.floor(b.next * k)) + 'px';
+    elMeta.style.fontSize = Math.max(9, Math.floor(b.meta * k)) + 'px';
+  }
+
+  /* ── 设置面板渲染 ──
+     面板是「就地重画」而不是模板拼串：所有文案都是本地常量，
+     但仍然坚持 createElement + textContent，避免以后有人往这里塞接口数据。 */
+  function mkBtn(label, on, fn, title) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = label;
+    if (on) b.className = 'on';
+    if (title) b.title = title;
+    b.addEventListener('click', fn);
+    return b;
+  }
+
+  function renderPanel() {
+    if (!elPanel) return;
+    /* 字号 */
+    var ps = $('pSize');
+    if (ps) {
+      ps.textContent = '';
+      var si = idxOf(SIZES, style.fontSize);
+      for (var i = 0; i < SIZES.length; i++) {
+        (function (n) {
+          ps.appendChild(mkBtn(SIZE_TXT[n], n === si, function () {
+            setPref('fontSize', SIZES[n]);
+            osd('字号 ' + SIZE_TXT[n]);
+          }, SIZES[n] + 'px'));
+        })(i);
+      }
+    }
+    /* 浓度 */
+    var po = $('pOp');
+    if (po) {
+      po.textContent = '';
+      var oi = idxOf(OPACITIES, style.opacity);
+      /* 浮点相等不可靠：0.86 这类值经过 IPC 往返可能是 0.8600000000000001，
+         所以先用「最近档」判定，再用原值覆盖 —— 不做这个容差，
+         用户点一次 86% 后按钮高亮会消失（认定「没有一档匹配」）。 */
+      for (var j = 0; j < OPACITIES.length; j++) {
+        if (Math.abs(OPACITIES[j] - style.opacity) < 0.02) oi = j;
+      }
+      for (var k2 = 0; k2 < OPACITIES.length; k2++) {
+        (function (n) {
+          po.appendChild(mkBtn(OP_TXT[n], n === oi, function () {
+            setPref('opacity', OPACITIES[n]);
+            osd('浓度 ' + OP_TXT[n]);
+          }));
+        })(k2);
+      }
+    }
+    /* 配色 */
+    var pt = $('pTheme');
+    if (pt) {
+      pt.textContent = '';
+      THEMES.forEach(function (t) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'swatch' + (t.id === style.theme ? ' on' : '');
+        b.style.background = 'linear-gradient(135deg,' + t.cur + ' 0%,' + t.next + ' 100%)';
+        b.title = t.name;
+        b.addEventListener('click', function () {
+          setPref('theme', t.id);
+          osd('配色 ' + t.name);
+        });
+        pt.appendChild(b);
+      });
+    }
+    /* 布局 */
+    var pa = $('pAlign');
+    if (pa) {
+      pa.textContent = '';
+      pa.appendChild(mkBtn('居中', style.align !== 'left', function () {
+        setPref('align', 'center'); osd('居中');
+      }));
+      pa.appendChild(mkBtn('左对齐', style.align === 'left', function () {
+        setPref('align', 'left'); osd('左对齐');
+      }));
+    }
+    /* 显示 */
+    var psh = $('pShow');
+    if (psh) {
+      psh.textContent = '';
+      psh.appendChild(mkBtn('歌名', style.showMeta !== false, function () {
+        setPref('showMeta', style.showMeta === false); osd(style.showMeta === false ? '显示歌名' : '隐藏歌名');
+      }));
+      psh.appendChild(mkBtn('下一句', style.showNext !== false, function () {
+        setPref('showNext', style.showNext === false); osd(style.showNext === false ? '显示下一句' : '隐藏下一句');
+      }));
+    }
+  }
+
+  function setPref(key, value) {
+    /* 乐观更新：主进程回推会再覆盖一次 */
+    if (key === 'fontSize') style.fontSize = clampFont(value);
+    else if (key === 'opacity') style.opacity = Number(value) || 0.92;
+    else if (key === 'theme') style.theme = String(value);
+    else if (key === 'align') style.align = (value === 'left') ? 'left' : 'center';
+    else if (key === 'showMeta') style.showMeta = !!value;
+    else if (key === 'showNext') style.showNext = !!value;
+    renderStyle();
+    if (typeof api.pref === 'function') api.pref(key, value);
+  }
+
+  /* 一闪即过的操作回执 */
+  var osdTimer = null;
+  function osd(txt) {
+    if (!elOsd) return;
+    elOsd.textContent = txt;
+    elOsd.classList.add('on');
+    if (osdTimer) clearTimeout(osdTimer);
+    osdTimer = setTimeout(function () { elOsd.classList.remove('on'); }, 1100);
+  }
+
+  /* ── 歌词现在处在哪个状态 ──────────────────────────────────
+     桌面窗读不到主页面的 LRC_STATE（那是个闭包里的变量），能读到的是
+     shell-bus 的 READ_JS 从 #lyricBox 上顺回来的两样东西：
+       hint  占位块的原文（'' = 没有占位块 = 正常演唱）
+       rows  已经画出来的歌词行 <p> 数
+     由这两样反推状态就够了。 */
+  function lrcPhase(hint, rows, hasLine) {
+    if (hint) {
+      if (hint.indexOf('前奏') >= 0) return 'prelude';
+      if (hint.indexOf('取歌词') >= 0) return 'loading';
+      /* 「歌词没取到 · 点此重试」里也有「歌词」两个字，所以这条必须排在
+         下面那条「没有歌词」之前 —— 反了就把可重试的失败态说成没词。 */
+      if (hint.indexOf('没取到') >= 0) return 'fail';
+      return 'none';
+    }
+    if (rows > 0 && !hasLine) return 'loading';
+    return hasLine ? 'ok' : 'none';
+  }
+
+  var PH_TEXT = {
+    loading: '取歌词…',
+    fail: '歌词没取到 · 回主窗重试',
+    none: '这首没有歌词'
+  };
+
+  /* 歌词文本一律走 textContent —— 歌词来自第三方接口，绝不能用 innerHTML
+     拼进去（等于把对方的数据当代码执行）。 */
+  function renderData(d) {
+    d = d || {};
+    var title = d.title || '', artist = d.artist || '';
+    var hint = String(d.hint || '').trim();
+    var rows = Number(d.rows) || 0;
+    var line = d.line || '';
+    var phase = lrcPhase(hint, rows, !!line);
+
+    /* 歌名行。前奏在这里挂一个标记 —— 三段之外没有第四个位置可放
+       （加第四行会改窗高，那就是业主说的「跳」），挂在歌名尾部最不打扰。 */
+    var metaTxt = title ? (title + (artist ? ' — ' + artist : '')) : 'YMusic 桌面歌词';
+    if (phase === 'prelude') metaTxt += ' · ♪ 前奏';
+    elMeta.textContent = metaTxt;
+
+    /* ⚠ 没在放（没有歌名）时**一律**说「等待播放…」，不能被 hint 抢走：
+       主页面停下之后 #lyricBox 里还留着上一首的占位块（「这首没有歌词」），
+       轮询会照样把它读回来 —— 不拦的话停播后歌词窗显示的是
+       「这首没有歌词」，而不是「等待播放…」。实测复现过。 */
+    if (!title) {
+      elLine.textContent = '等待播放…';
+    } else {
+      if (phase === 'prelude' && !line) line = hint;  /* 词还没点亮：先摆「♪ 前奏…」 */
+      else if (phase === 'loading' || phase === 'fail') line = PH_TEXT[phase];
+      else if (phase === 'none') line = hint || PH_TEXT.none;
+      elLine.textContent = line || PH_TEXT.none;
+    }
+    elLine.classList.toggle('ph', !!title && (phase === 'loading' || phase === 'fail' || phase === 'none'));
+
+    /* ⚠ 没有下一句时（末句 / 无词）用 visibility 而不是 display：
+       #box 是 flex + justify-content:center，display:none 会少一个子项并立刻
+       重新居中，整块内容跳一下 —— 这正是业主说的「跳」。
+       🔴 但 visibility:hidden 只保住「画不画」，保不住高度：空文本块没有 line box，
+          高度会塌成 0，flex 照样重新居中（实测位移 +9~+15.6px，比 display:none 还大）。
+          所以 CSS 里给 #next 加了 min-height:1.2em 占位，两处必须成对存在。
+       另外「显示下一句」关掉时也走同一条路 —— 用 style.showNext 一起判。 */
+    var nx = d.nextLine || '';
+    elNext.textContent = nx;
+    elNext.style.visibility = (style.showNext && nx) ? '' : 'hidden';
+
+    playing = !!d.playing;
+    document.body.classList.toggle('dim', !!title && !playing);
+    /* 播放/暂停按钮图标跟着换（暂停态显示 ▶，播放态显示 ❚❚） */
+    var pp = $('playPath');
+    if (pp) pp.setAttribute('d', playing ? 'M6 5h4v14H6zm8 0h4v14h-4z' : 'M8 5v14l11-7z');
+    $('bPlay').title = playing ? '暂停' : '播放';
+
+    /* ── P1-3 封面取色 ──
+       颜色串必须过格式校验：#RRGGBB / #RGB 之外的任何东西（包括空串、
+       被注入的怪字符串）一律不落地，退回主题色。 */
+    var ac = String(d.accent || '').trim();
+    if (ac && /^#[0-9a-fA-F]{3,8}$/.test(ac)) {
+      elLine.style.setProperty('--accent', ac);
+    } else {
+      elLine.style.removeProperty('--accent');
+    }
+    /* ── 失焦不再塌行 ──
+       focus === false 才进 mini；undefined（老版本主进程没推这个字段）当作 true。
+       🔴 现在 .mini 只是个**信号 class**：CSS 里已经没有任何一条规则消费它。
+          谁要是想给它加回样式，先回去读上面那段注释。 */
+    document.body.classList.toggle('mini', d.focus === false && !!title);
+    document.title = title ? (title + ' · YMusic 桌面歌词') : 'YMusic 桌面歌词';
+    /* 下一句的可见性依赖 textContent，改完要重排一次 */
+    if (!panelOpen) reportHeight();
+  }
+
+  /* 指针是否压在工具条上（锁定态解锁的判据，留 8px 容差更好点） */
+  function nearTools(x, y) {
+    var r = elTools.getBoundingClientRect();
+    return x >= r.left - 8 && x <= r.right + 8 && y >= r.top - 8 && y <= r.bottom + 8;
+  }
+
+  function setHot(on) {
+    on = !!on;
+    if (hot === on) return;
+    hot = on;
+    document.body.classList.toggle('hot', on);
+    /* 只有锁定态才需要临时放开穿透；未锁定时窗口本来就能收事件 */
+    if (style.locked && typeof api.hover === 'function') api.hover(on);
+  }
+
+  function setPanel(on) {
+    panelOpen = !!on;
+    document.body.classList.toggle('panel', panelOpen);
+    $('bCfg').classList.toggle('on', panelOpen);
+    if (panelOpen) {
+      renderPanel();
+      lastNeedH = 0;          /* 强制重报：面板与三行的高度不同 */
+      reportHeight();
+    } else {
+      renderStyle();
+    }
+  }
+
+  /* ── 右键菜单 ──
+     为什么要有：对齐、显示歌名、显示下一句这三项放进工具条会挤到 meta 没地方。
+     右键是桌面软件里放「不常用但需要」的标准位置。 */
+  function closeCtx() {
+    if (!ctxOpen) return;
+    ctxOpen = false;
+    document.body.classList.remove('ctx');
+  }
+  function openCtx(x, y) {
+    if (!elCtx) return;
+    elCtx.textContent = '';
+    var items = [
+      ['居中', style.align !== 'left', function () { setPref('align', 'center'); closeCtx(); }],
+      ['左对齐', style.align === 'left', function () { setPref('align', 'left'); closeCtx(); }],
+      { hr: 1 },
+      ['显示歌名', style.showMeta !== false, function () { setPref('showMeta', style.showMeta === false); closeCtx(); }],
+      ['显示下一句', style.showNext !== false, function () { setPref('showNext', style.showNext === false); closeCtx(); }],
+      { hr: 1 },
+      ['设置…', false, function () { closeCtx(); setPanel(!panelOpen); }],
+      ['锁定（鼠标穿透）', style.locked, function () { closeCtx(); toggleLock(); }],
+      ['关闭歌词', false, function () { closeCtx(); if (typeof api.close === 'function') api.close(); }]
+    ];
+    items.forEach(function (it) {
+      if (it.hr) {
+        var hr = document.createElement('div');
+        hr.className = 'hr';
+        elCtx.appendChild(hr);
+        return;
+      }
+      var b = document.createElement('button');
+      b.type = 'button';
+      var sp = document.createElement('span');
+      sp.textContent = it[0];
+      b.appendChild(sp);
+      if (it[1]) {
+        var i = document.createElement('i');
+        i.textContent = '✓';
+        b.appendChild(i);
+      }
+      b.addEventListener('click', it[2]);
+      elCtx.appendChild(b);
+    });
+    /* 先量再定位，避免菜单右边/下边超出窗口 */
+    elCtx.style.left = '0px';
+    elCtx.style.top = '0px';
+    ctxOpen = true;
+    document.body.classList.add('ctx');
+    var r = elCtx.getBoundingClientRect();
+    var bw = document.body.clientWidth, bh = document.body.clientHeight;
+    elCtx.style.left = Math.max(4, Math.min(x, bw - r.width - 4)) + 'px';
+    elCtx.style.top = Math.max(4, Math.min(y, bh - r.height - 4)) + 'px';
+  }
+
+  function toggleLock() {
+    style.locked = !style.locked;
+    setHot(false);
+    renderStyle();
+    if (typeof api.lock === 'function') api.lock(style.locked);
+    osd(style.locked ? '已锁定 · 鼠标可穿透' : '已解锁 · 可拖动');
+  }
+
+  /* 窗口被主进程按 needHeight 调高、或被用户手动拖小/拖大之后可用高度变了，
+     字号要重算一次（升回设定值 / 等比缩小防裁切）。
+     ⚠ 这里不会打环：renderStyle() 里的 reportHeight() 有判等。 */
+  window.addEventListener('resize', function () { renderStyle(); });
+
+  document.addEventListener('mousemove', function (e) { setHot(nearTools(e.clientX, e.clientY)); });
+  document.addEventListener('mouseleave', function () { setHot(false); });
+  window.addEventListener('blur', function () { setHot(false); });
+
+  /* 点击页面空白处收起右键菜单（菜单内部点击自己会关） */
+  document.addEventListener('mousedown', function (e) {
+    if (ctxOpen && elCtx && !elCtx.contains(e.target)) closeCtx();
+  });
+
+  /* 工具条：媒体控制走 api.cmd → 主进程 bus.sendCommand（与托盘/快捷键同一条路）。
+     ⚠️ 旧壳没有 cmd，按钮点了不能「看起来正常但没反应」—— 判不到就禁用并给 title。 */
+  ['bPrev', 'bPlay', 'bNext'].forEach(function (id) {
+    var b = $(id);
+    if (!b) return;
+    if (typeof api.cmd !== 'function') {
+      b.disabled = true;
+      b.style.opacity = '.35';
+      b.style.cursor = 'default';
+      b.title = '当前版本不支持（升级客户端后可用）';
+      return;
+    }
+    b.addEventListener('click', function () {
+      var act = id === 'bPrev' ? 'prev' : (id === 'bNext' ? 'next' : 'toggle');
+      api.cmd(act);
+    });
+  });
+
+  $('bCfg').addEventListener('click', function () { setPanel(!panelOpen); });
+  $('bLock').addEventListener('click', toggleLock);
+  $('bClose').addEventListener('click', function () {
+    if (typeof api.close === 'function') api.close();
+  });
+
+  /* 右键：锁定态下窗口穿透，收不到 contextmenu；未锁定时才生效 */
+  document.addEventListener('contextmenu', function (e) {
+    e.preventDefault();
+    if (style.locked) return;
+    openCtx(e.clientX, e.clientY);
+  });
+
+  /* Esc：先收面板/菜单，都没有就不管（不抢全局 Esc） */
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    if (ctxOpen) { closeCtx(); return; }
+    if (panelOpen) setPanel(false);
+  });
+
+  if (typeof api.onData === 'function') api.onData(renderData);
+  if (typeof api.onPrefs === 'function') {
+    api.onPrefs(function (p) {
+      p = p || {};
+      /* 逐字段合并：主进程可能只推了部分字段（老壳只推 locked/opacity/fontSize），
+         整体替换会把 theme/align 这些新字段冲成 undefined。 */
+      if (typeof p.locked === 'boolean') style.locked = p.locked;
+      if (typeof p.opacity === 'number') style.opacity = p.opacity;
+      if (typeof p.fontSize === 'number') style.fontSize = clampFont(p.fontSize);
+      if (p.theme) style.theme = String(p.theme);
+      if (p.align) style.align = (p.align === 'left') ? 'left' : 'center';
+      if (typeof p.showMeta === 'boolean') style.showMeta = p.showMeta;
+      if (typeof p.showNext === 'boolean') style.showNext = p.showNext;
+      renderStyle();
+    });
+  }
+  renderStyle();
+})();
+</script>
+</body>
+</html>
