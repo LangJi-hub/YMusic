@@ -46,8 +46,26 @@ YMusic 是一个**完全自托管**的音乐服务。它把你常用的几个音
 
 > 本仓库是**脱敏后的源码副本**：用户数据、会话密钥、发信配置、部署凭据均已剔除，公网地址统一替换为 `127.0.0.1`。
 
+## 界面预览
+
+> 手机端真实运行截图（390×844，2× 像素密度），非设计稿。
+
+<table>
+  <tr>
+    <td align="center"><img src="docs/screenshots/01-home.jpg" width="190"><br><sub><b>首页</b> · 每日推荐 · 多平台轮播</sub></td>
+    <td align="center"><img src="docs/screenshots/02-search.jpg" width="190"><br><sub><b>搜索</b> · 107 条结果 · 同名折叠</sub></td>
+    <td align="center"><img src="docs/screenshots/03-player.jpg" width="190"><br><sub><b>播放页</b> · 黑胶 · 逐字歌词</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/screenshots/04-me.jpg" width="190"><br><sub><b>个人中心</b> · 曲库与设置</sub></td>
+    <td align="center"><img src="docs/screenshots/05-rank.jpg" width="190"><br><sub><b>排行榜</b> · 多平台榜单</sub></td>
+    <td align="center"><img src="docs/screenshots/06-playlist.jpg" width="190"><br><sub><b>歌单</b> · 精选 600 个</sub></td>
+  </tr>
+</table>
+
 ## 目录
 
+- [界面预览](#界面预览)
 - [功能特性](#功能特性)
 - [技术架构](#技术架构)
 - [快速开始](#快速开始)
@@ -224,12 +242,20 @@ node --experimental-sea-config sea-config.json
 
 ### config.json
 
+首次启动会自动生成。需要手动指定时，从示例复制一份：
+
+```bash
+cp config.example.json config.json
+```
+
 ```json
 {
   "downloadDir": "/opt/ymusic/Downloads/YMusic",
   "concurrency": 4
 }
 ```
+
+> `config.json` 是**运行期文件**，已被 gitignore。仓库里只保留 `config.example.json`。
 
 | 字段 | 类型 | 说明 |
 |---|---|---|
@@ -254,7 +280,7 @@ node --experimental-sea-config sea-config.json
 ```
 .
 ├── server.mjs                 主服务 · 零依赖单文件 · :8788
-├── config.json                运行配置
+├── config.example.json        配置示例（复制为 config.json 使用）
 ├── package.json               仅声明 playwright（桌面端自动化用）
 ├── public-url.txt             对外地址
 │
