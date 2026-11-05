@@ -1,0 +1,120 @@
+name: CI
+
+# 三道闸门，全部零依赖、几十秒跑完：
+#   1) 静态检查 —— server.mjs 与页面内嵌脚本能不能被 JS 引擎解析
+#   2) 冷启动冒烟 —— 干净克隆下来直接 node server.mjs，真的起得来、/api/ping 真的通
+#   3) 敏感信息 —— 别把服务器 IP / Cookie / 令牌再提交回公开仓库
+#
+# 第 2 项是重点：本仓库的「一键部署」承诺就是 clone 完能跑，
+# 只有真的在干净环境里跑一遍，README 里那句话才站得住。
+
+on:
+  push:
+    branches: ['**']
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static:
+    name: 静态检查 · Node ${{ matrix.node }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['22', '24']
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: 服务端语法
+        run: |
+          for f in server.mjs admin/server.mjs admin/sea-main.cjs; do
+            [ -e "$f" ] || continue
+            echo "node --check $f"
+            node --check "$f"
+          done
+
+      - name: 页面内嵌脚本语法
+        run: node tools/ci/check-inline-js.mjs
+
+      - name: 部署脚本语法
+        run: |
+          for f in deploy/*.sh; do
+            [ -e "$f" ] || continue
+            echo "bash -n $f"
+            bash -n "$f"
+          done
+          for f in deploy/*.py tools/*.py; do
+            [ -e "$f" ] || continue
+            echo "py_compile $f"
+            python3 -m py_compile "$f"
+          done
+
+      - name: 敏感信息
+        run: node tools/ci/guard-sensitive.mjs
+
+  smoke:
+    name: 冷启动冒烟
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: 确认仓库里没有遗留的运行期数据
+        run: |
+          # data/ 与 config.json 必须不在版本控制里，否则等于把别人的账号一起发出去
+          if git ls-files --error-unmatch data 2>/dev/null; then
+            echo "::error::data/ 被提交进仓库了"; exit 1
+          fi
+          if git ls-files --error-unmatch config.json 2>/dev/null; then
+            echo "::error::config.json 被提交进仓库了（应只保留 config.example.json）"; exit 1
+          fi
+
+      - name: 直接启动并探活
+        run: |
+          set -o pipefail
+          PORT=8899 node server.mjs > /tmp/ymusic.log 2>&1 &
+          SRV=$!
+          state=timeout
+          for i in $(seq 1 60); do
+            if curl -sf --max-time 2 http://127.0.0.1:8899/api/ping -o /tmp/ping.json; then state=ok; break; fi
+            if ! kill -0 "$SRV" 2>/dev/null; then state=exit; break; fi
+            sleep 0.5
+          done
+
+          echo "--- 启动日志 ---"
+          cat /tmp/ymusic.log || true
+
+          if [ "$state" = "exit" ]; then
+            echo "::error::进程启动后立刻退出了"; exit 1
+          fi
+          if [ "$state" != "ok" ]; then
+            echo "::error::30 秒内没有响应 /api/ping"; exit 1
+          fi
+
+          echo "--- /api/ping ---"
+          cat /tmp/ping.json
+          echo
+
+          node -e '
+            const j = require("/tmp/ping.json");
+            if (j.ok !== true) { console.error("ok 字段不是 true"); process.exit(1); }
+            if (!j.app) { console.error("缺少版本号 app 字段"); process.exit(1); }
+            console.log("服务端版本:", j.app, "| 属地库:", j.ipgeo ? "已加载" : "未加载(不影响使用)");
+          '
+
+          kill "$SRV" 2>/dev/null || true
