@@ -162,6 +162,8 @@ YMusic 是一个**完全自托管**的音乐服务。它把你常用的几个音
 
 平台账号能力（酷狗 / QQ / 网易云）通过二维码登录接入，带健康探测与到期提醒。
 
+另有**音源守卫**（`tools/kg-guard.py`）：定时探测各音源的实际可用性，失效时告警并给出换源指引，避免用户搜到歌却播不出来。
+
 ### 客户端
 
 - **Web**：响应式，桌面与移动共用一份代码
@@ -341,7 +343,12 @@ cp config.example.json config.json
 ├── android-admin/             Android 管理端发布信息
 ├── bootstrap/                 客户端引导页与地址下发
 ├── deploy/                    部署与运维脚本
+├── tools/
+│   └── kg-guard.py            音源可用性守卫（定时探测、失效告警、自动换源）
 ├── geo/                       ip2region 离线 IP 库
+│
+├── 一键打包.py                 客户端打包脚本（Electron 壳 / Android APK）
+├── 打包与分发说明.md            打包、签名与分发的操作说明
 │
 ├── docs/                      文档
 │   ├── API.md                 152 个接口清单
