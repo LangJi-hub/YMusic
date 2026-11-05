@@ -1,6 +1,15 @@
 # ── 运行时数据：用户账号 / 会话 / 密钥 / 缓存，绝不可提交 ──
 data/
 
+# ── 平台账号凭证（酷狗 / QQ / 网易云登录态）：泄漏等于把账号送人 ──
+# 正常位置是 data/secrets.json，已被上面一行覆盖；这里再显式挡一道，
+# 防止有人把文件挪到别处（如 ./secrets.json、./cookie.txt）后误提交。
+secrets.json
+*.cookie
+cookie*.txt
+.env
+.env.*
+
 # ── 下载产物与更新包 ──
 downloads/
 Downloads/
