@@ -12,6 +12,7 @@
 <p align="center">
   <a href="https://github.com/LangJi-hub/YMusic"><img src="https://img.shields.io/badge/version-3.9.0-1f6feb" alt="version"></a>
   <a href="https://nodejs.org"><img src="https://img.shields.io/badge/Node.js-%E2%89%A522-339933?logo=node.js&logoColor=white" alt="node"></a>
+  <a href="https://github.com/LangJi-hub/YMusic/actions/workflows/ci.yml"><img src="https://github.com/LangJi-hub/YMusic/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <img src="https://img.shields.io/badge/dependencies-0-2ea44f" alt="zero deps">
   <img src="https://img.shields.io/badge/server-single%20file-8957e5" alt="single file">
   <img src="https://img.shields.io/badge/client-ES5%20compatible-f9a825" alt="es5">

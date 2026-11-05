@@ -23,7 +23,11 @@ node server.mjs          # 需要 Node.js ≥ 22
    ```
 
 2. **前端语法**（单文件体量大，最容易在这里出事）
-   打开页面看控制台，确认没有 `SyntaxError`。整页白屏通常就是这里。
+   ```bash
+   node tools/ci/check-inline-js.mjs
+   ```
+   把每个 `<script>` 块交给 V8 解析一遍。整页白屏的典型原因就是某次编辑吃掉了相邻分支的 `}`，
+   代码风格规则查不出来，但浏览器里整段脚本会直接不执行。
 
 3. **没有引入第三方依赖**
    ```bash
@@ -34,8 +38,12 @@ node server.mjs          # 需要 Node.js ≥ 22
 4. **没有提交运行时数据**
    ```bash
    git status --short | grep -E "data/|Downloads/|runtime.json"
+   node tools/ci/guard-sensitive.mjs
    ```
-   应当**没有任何输出**。
+   应当**没有任何输出**，且敏感信息检查通过。
+
+以上四项在 GitHub Actions 里也会跑（见 `.github/workflows/ci.yml`），
+其中还包括一次干净克隆的冷启动冒烟：`node server.mjs` 起来后用 `/api/ping` 探活。
 
 ## 代码风格
 
