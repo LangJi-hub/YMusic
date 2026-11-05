@@ -48,18 +48,27 @@ YMusic 是一个**完全自托管**的音乐服务。它把你常用的几个音
 
 ## 界面预览
 
-> 手机端真实运行截图（390×844，2× 像素密度），非设计稿。
+> Android 客户端真机截图（1260×2720，3× 像素密度），非设计稿。
+> 网页端、Electron 桌面端与 Android 端共用同一份 `web/index.html`，界面一致，差别仅在窗口外壳。
 
 <table>
   <tr>
-    <td align="center"><img src="docs/screenshots/01-home.jpg" width="190"><br><sub><b>首页</b> · 每日推荐 · 多平台轮播</sub></td>
-    <td align="center"><img src="docs/screenshots/02-search.jpg" width="190"><br><sub><b>搜索</b> · 107 条结果 · 同名折叠</sub></td>
-    <td align="center"><img src="docs/screenshots/03-player.jpg" width="190"><br><sub><b>播放页</b> · 黑胶 · 逐字歌词</sub></td>
+    <td align="center"><img src="docs/screenshots/app-home.jpg" width="178"><br><sub><b>首页</b><br>问候 · 发现入口 · 每日推荐</sub></td>
+    <td align="center"><img src="docs/screenshots/app-search.jpg" width="178"><br><sub><b>聚合搜索</b><br>四平台合并去重 · 同名折叠</sub></td>
+    <td align="center"><img src="docs/screenshots/app-player.jpg" width="178"><br><sub><b>播放页</b><br>黑胶唱片 · 逐行滚动歌词</sub></td>
   </tr>
   <tr>
-    <td align="center"><img src="docs/screenshots/04-me.jpg" width="190"><br><sub><b>个人中心</b> · 曲库与设置</sub></td>
-    <td align="center"><img src="docs/screenshots/05-rank.jpg" width="190"><br><sub><b>排行榜</b> · 多平台榜单</sub></td>
-    <td align="center"><img src="docs/screenshots/06-playlist.jpg" width="190"><br><sub><b>歌单</b> · 精选 600 个</sub></td>
+    <td align="center"><img src="docs/screenshots/app-lyric-settings.jpg" width="178"><br><sub><b>播放设置</b><br>字号 · 对齐 · 歌词与音量微调</sub></td>
+    <td align="center"><img src="docs/screenshots/app-rank.jpg" width="178"><br><sub><b>排行榜</b><br>酷狗 / QQ / 网易云 / B站 榜单</sub></td>
+    <td align="center"><img src="docs/screenshots/app-artist.jpg" width="178"><br><sub><b>歌手</b><br>热门歌手 · 按名字检索</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/screenshots/app-playlist.jpg" width="178"><br><sub><b>歌单精选</b><br>600 个歌单 · 支持粘贴链接直开</sub></td>
+    <td align="center"><img src="docs/screenshots/app-moments.jpg" width="178"><br><sub><b>音乐圈</b><br>分享动态 · 活跃榜 · 一键收藏</sub></td>
+    <td align="center"><img src="docs/screenshots/app-collection.jpg" width="178"><br><sub><b>我的收藏</b><br>跨设备同步 · 全平台播放</sub></td>
+  </tr>
+  <tr>
+    <td align="center" colspan="3"><img src="docs/screenshots/app-me.jpg" width="178"><br><sub><b>个人中心</b><br>上传 · 播放记录 · 本地下载</sub></td>
   </tr>
 </table>
 
@@ -305,6 +314,11 @@ cp config.example.json config.json
 ├── bootstrap/                 客户端引导页与地址下发
 ├── deploy/                    部署与运维脚本
 ├── geo/                       ip2region 离线 IP 库
+│
+├── docs/                      文档
+│   ├── API.md                 152 个接口清单
+│   ├── ARCHITECTURE.md        设计决策说明
+│   └── screenshots/           真机截图（README 引用）
 │
 └── data/                      ← 运行时生成，已 gitignore
     ├── users.json             账号
