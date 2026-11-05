@@ -42,6 +42,12 @@ YMusic 是一个**完全自托管**的**音乐播放器**，同时也是一个**
 - **网页版音乐播放器**：不装客户端，一个网址就是完整播放器，支持 PWA 装到桌面
 - **音乐下载工具**：搜到就能下，带封面、歌词、歌单批量导入
 
+<sub>
+
+**English** — YMusic is a self-hosted web music player and music downloader. It aggregates public audio sources from Kugou, QQ Music, NetEase Cloud Music and Bilibili into a single interface: search, streaming, download, lyrics, playlists and accounts. The server is a single dependency-free `server.mjs` (Node.js ≥ 22); the client is a single `index.html` with no build step. Runs on a laptop, a NAS or a VPS, and works as a PWA, an Electron desktop app and an Android app.
+
+</sub>
+
 它最特别的地方在于工程形态：
 
 | | |
